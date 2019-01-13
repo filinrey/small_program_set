@@ -8,6 +8,7 @@ import termios
 import time
 import re
 import os.path
+import shutil
 
 PYFILE_NAME = sys.argv[0][sys.argv[0].rfind(os.sep) + 1:]
 PREFIX_NAME = PYFILE_NAME + "# "
@@ -50,12 +51,32 @@ def show_help_exit():
 def show_help_login():
     print ('\r')
     print ('\r', end='')
-    print ('\t# login [NAME | IP] [USER]')
+    print ('\t# login [NAME] [IP] [USER] [PASSWORD]')
+    print ('\r')
+    print ('\r', end='')
+    print ('\tExample 1: login DU10 // DU10 is name of one history which had been logined by using this program')
+    print ('\r')
+    print ('\r', end='')
+    print ('\tExample 2: login DU10 1.2.3.4 root rootme')
+    print ('\r', end='')
+    print ('\t           -> NAME=DU10, IP=1.2.3.4, USER=root PASSWORD=rootme')
+    print ('\r', end='')
+    print ('\t           -> if login firstly, will store it as login history with DU10. DU10 can be used directly next time as Example 1')
+    print ('\r', end='')
+    print ('\t           -> if DU10 is already exist in login history, will replace the old one.')
+
+def show_help_update():
+    print ('\r')
+    print ('\r', end='')
+    print ('\t# update [NAME] [IP] [USER] [PASSWORD]')
+    print ('\r', end='')
+    print ('\tit can be covered by login, not usable currently')
 
 CMD_HELP_FUNC = {
                  'help': show_help_help,
                  'exit': show_help_exit,
                  'login': show_help_login,
+                 'update': show_help_update,
                 }
 
 def clear_line(length):
@@ -114,6 +135,7 @@ def action_help(command):
         return
     if command == 'help ':
         CMD_HELP_FUNC['help']()
+        return
     length = len('help ')
     if CMD_HELP_FUNC.has_key(command[length:]):
         CMD_HELP_FUNC[command[length:]]()
@@ -121,8 +143,85 @@ def action_help(command):
         INPUT_CMD = ''
 
 def show_login_history():
-    pass
+    seq = 0
+    print ('\r')
+    try:
+        f = open(LOGIN_HISTORY_FILE, 'r')
+        line = f.readline()
+        new_line = ''
+        while line:
+            sub_cmds = line.strip('\n').split()
+            if len(sub_cmds) != 4:
+                continue
+            if seq == 0:
+                new_line = '\t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1]
+                seq += 1
+            else:
+                new_line = new_line + '    \t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1]
+                seq = 0
+                print ('\r', end='')
+                print (new_line)
+            line = f.readline()
+        if seq == 1:
+            print ('\r', end='')
+            print (new_line)
+    finally:
+        if f:
+            f.close()
 
+def update_login_history(name, ip, user, password):
+    find_flag = False
+    try:
+        f = open(LOGIN_HISTORY_FILE, 'r+')
+        tmp_f = open(LOGIN_HISTORY_FILE + '.tmp', 'w')
+        if os.path.getsize(LOGIN_HISTORY_FILE) == 0:
+            new_line = name + '    ' + ip + '    ' + user + '    ' + password + '\n'
+            f.write(new_line)
+        else:
+            line = f.readline()
+            while line:
+                if re.match(name, line):
+                    # find name in login history
+                    find_flag = True
+                    new_line = name + '    ' + ip + '    ' + user + '    ' + password + '\n'
+                    tmp_f.write(new_line)
+                else:
+                    tmp_f.write(line)
+                line = f.readline()
+        if not find_flag:
+            new_line = name + '    ' + ip + '    ' + user + '    ' + password + '\n'
+            f.write(new_line)
+
+    finally:
+        if f:
+            f.close()
+        if tmp_f:
+            tmp_f.close()
+        if find_flag:
+            shutil.move(LOGIN_HISTORY_FILE + '.tmp', LOGIN_HISTORY_FILE)
+        else:
+            os.remove(LOGIN_HISTORY_FILE + '.tmp')
+
+
+def action_login(command):
+    if command == 'login ':
+        if os.path.getsize(LOGIN_HISTORY_FILE) == 0:
+            print ('\r')
+            print ('\r', end='')
+            print ('there is no login history')
+            return
+        show_login_history()
+        return
+
+    sub_cmds = command.split()
+    if len(sub_cmds) != 2 and len(sub_cmds) != 5:
+        CMD_HELP_FUNC['login']()
+        return
+
+    if len(sub_cmds) == 5:
+        update_login_history(sub_cmds[1], sub_cmds[2], sub_cmds[3], sub_cmds[4])
+        clear_line(len(PREFIX_SHOW))
+        INPUT_CMD = ''
 
 if not os.path.exists(CONFIG_DIRECTORY):
     print ('\r', end='')
@@ -172,8 +271,10 @@ while True:
         exit()
     elif ord(ch) == 0x09:
         # tab key
-        if INPUT_CMD == 'help ':
-            CMD_HELP_FUNC['help']()
+        if re.match('help ', INPUT_CMD):
+            action_help(INPUT_CMD)
+        elif re.match('login ', INPUT_CMD):
+            action_login(INPUT_CMD)
         elif CURRENT_STATE == 'STATE_CMD_INPUT':
             show_support_cmd(INPUT_CMD)
             clear_line(len(PREFIX_SHOW))
@@ -186,10 +287,10 @@ while True:
         print ("\r", end='')
     elif ord(ch) == 0x0d:
         # return key
-        if CURRENT_STATE == 'STATE_CMD_INPUT' and re.match('help', INPUT_CMD):
+        if re.match('help', INPUT_CMD):
             action_help(INPUT_CMD)
-        elif CURRENT_STATE == 'STATE_CMD_INPUT' and INPUT_CMD == 'login':
-            show_login_history()
+        if re.match('login', INPUT_CMD):
+            action_login(INPUT_CMD)
         elif INPUT_CMD == 'exit':
             print ('')
             exit()

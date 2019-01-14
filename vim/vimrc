@@ -1,0 +1,120 @@
+set nocompatible    "be iMproved, required
+filetype off        "required
+
+set rtp+=/home/fenghxu/.vim/bundle/vundle.vim
+
+call vundle#begin()
+Plugin 'VundleVim/Vundle.vim'
+Plugin 'flazz/vim-colorschemes'
+Plugin 'Lokaltog/vim-powerline'
+Plugin 'scrooloose/nerdtree'
+Plugin 'kien/ctrlp.vim'
+Plugin 'scrooloose/nerdcommenter'
+Plugin 'Shougo/neocomplcache.vim'
+Plugin 'mattn/emmet-vim'
+Plugin 'xml.vim'
+Plugin 'godlygeek/tabular'
+Plugin 'plasticboy/vim-markdown'
+"Plugin 'Valloric/YouCompleteMe'
+Plugin 'scrooloose/syntastic'
+Plugin 'tpope/vim-fugitive'
+call vundle#end()
+
+filetype plugin indent on
+
+map <F3> :NERDTreeToggle<CR>
+autocmd bufenter *
+            \ if (winnr("$") == 1 && exists("b:NERDTree") && 
+            \ b:NERDTree.isTabTree()) | q |
+            \ endif
+let NERDTreeShowHidden = 1
+
+set foldmethod=syntax
+set foldlevelstart=99
+
+set ruler
+set showcmd
+set showmode
+set scrolloff=7
+"set nowrap
+set showmatch
+
+set hlsearch
+set incsearch
+set ignorecase
+set smartcase
+
+set smartindent
+set autoindent
+
+set completeopt=longest,menu
+
+set wildmenu
+set wildignore=*.o,*~,*.pyc,*.class
+autocmd InsertLeave * if pumvisible() == 0|pclose|endif
+inoremap <expr> <CR>    pumvisible() ? "\<C-y>" : "\<CR>"
+
+if has("autocmd")
+    au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+endif
+
+set relativenumber number
+au FocusLost * :set norelativenumber number
+au FocusGained * :set relativenumber
+autocmd InsertEnter * :set norelativenumber number
+autocmd InsertLeave * :set relativenumber
+function! NumberToggle()
+    if(&relativenumber == 1)
+        set norelativenumber number
+    else
+        set relativenumber
+    endif
+endfunc
+nnoremap <C-n> :call NumberToggle()<CR>
+
+function! HideNumber()
+    if(&relativenumber == &number)
+        set relativenumber! number!
+    elseif(&number)
+        set number!
+    else
+        set relativenumber!
+    endif
+    set number?
+endfunc
+nnoremap <F2> :call HideNumber()<CR>
+
+au InsertLeave * set nopaste
+function! XTermPasteBegin()
+    "set pastetoggle=<Esc>[201~
+    set paste
+    return ""
+endfunc
+inoremap <special> <expr> <Esc>[200~ XTermPasteBegin()
+
+set nobackup
+set noundofile
+set noswapfile
+set nu
+set mouse-=a
+syntax on
+colorscheme monokai
+set backspace=indent,eol,start
+
+set ts=4
+set shiftwidth=4
+set softtabstop=4
+set expandtab
+
+"autocmd FileType python set tabstop=4 shiftwidth=4 expandtab ai
+"autocmd FileType ruby,javascript,html,ccs,xml set tabstop=2 shiftwidth=2 softtabstop=2 expandtab ai"autocmd BufRead,BufNewFile *.md,*.mkd,*.markdown set filetype=markdown.mkd
+"autocmd BufRead,BufNewFile *.part set filetype=html
+"autocmd BufRead,BufNewFile *.vue setlocal filetype=vue.html.javascript tabstop=2 shiftwidth=2 softtabstop=2 expandtab ai
+
+"function! <SID>StripTrailingWhitespaces()
+"    let l = line(".")
+"    let c = col(".")
+"    %s/\s\+$//e
+"    call cursor(l, c)
+"endfunc
+"autocmd FileType c,cpp,java,go,php,javascript,puppet,python,rust,twig,xml,yml,perl autocmd BufWritePre <buffer> :call <SID>StripTrailingWhitespaces()

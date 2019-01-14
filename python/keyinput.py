@@ -9,6 +9,7 @@ import time
 import re
 import os.path
 import shutil
+from key import KEY
 
 PYFILE_NAME = sys.argv[0][sys.argv[0].rfind(os.sep) + 1:]
 PREFIX_NAME = PYFILE_NAME + "# "
@@ -142,7 +143,7 @@ def action_help(command):
         clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
 
-def show_login_history():
+def show_login_history(name=None):
     seq = 0
     print ('\r')
     try:
@@ -153,21 +154,47 @@ def show_login_history():
             sub_cmds = line.strip('\n').split()
             if len(sub_cmds) != 4:
                 continue
-            if seq == 0:
-                new_line = '\t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1]
-                seq += 1
-            else:
-                new_line = new_line + '    \t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1]
+            if name and re.match(name, sub_cmds[0]) == None:
+                continue
+            new_line = new_line + '    \t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1]
+            seq += 1
+            if seq == 3:
                 seq = 0
                 print ('\r', end='')
                 print (new_line)
+                new_line = ''
             line = f.readline()
-        if seq == 1:
+        if seq:
             print ('\r', end='')
             print (new_line)
     finally:
         if f:
             f.close()
+
+def get_login_history_by_name(name):
+    if os.path.getsize(LOGIN_HISTORY_FILE) == 0:
+        print ('\r')
+        print ('\r', end='')
+        print ('no login history for name =', name)
+        return None
+    try:
+        f = open(LOGIN_HISTORY_FILE, 'r')
+        line = f.readline()
+        while line:
+            sub_cmds = line.strip('\n').split()
+            if len(sub_cmds) != 4:
+                continue
+            if name == sub_cmds[0]:
+                f.close()
+                return {'name': sub_cmds[0],
+                        'ip': sub_cmds[1],
+                        'user': sub_cmds[2],
+                        'password': sub_cmds[3]}
+    finally:
+        if f:
+            f.close()
+    
+    return None
 
 def update_login_history(name, ip, user, password):
     find_flag = False
@@ -188,9 +215,9 @@ def update_login_history(name, ip, user, password):
                 else:
                     tmp_f.write(line)
                 line = f.readline()
-        if not find_flag:
-            new_line = name + '    ' + ip + '    ' + user + '    ' + password + '\n'
-            f.write(new_line)
+            if not find_flag:
+                new_line = name + '    ' + ip + '    ' + user + '    ' + password + '\n'
+                f.write(new_line)
 
     finally:
         if f:
@@ -203,7 +230,9 @@ def update_login_history(name, ip, user, password):
             os.remove(LOGIN_HISTORY_FILE + '.tmp')
 
 
-def action_login(command):
+def action_login(command, key):
+    global PREFIX_SHOW
+    global INPUT_CMD
     if command == 'login ':
         if os.path.getsize(LOGIN_HISTORY_FILE) == 0:
             print ('\r')
@@ -218,11 +247,25 @@ def action_login(command):
         CMD_HELP_FUNC['login']()
         return
 
+    if len(sub_cmds) == 2:
+        if key == KEY.TAB:
+            show_login_history(sub_cmds[1])
+        if key == KEY.ENTER:
+            login_option = get_login_history_by_name(sub_cmds[1])
+            if login_option:
+                print ('\r')
+                print ('\r', end='')
+                show_info = '[' + login_option['name'] + '] -> ' + login_option['user'] + '@' + login_option['ip']
+                print (show_info)
+
     if len(sub_cmds) == 5:
         update_login_history(sub_cmds[1], sub_cmds[2], sub_cmds[3], sub_cmds[4])
-        clear_line(len(PREFIX_SHOW))
-        INPUT_CMD = ''
+        
+    print ('\r')
+    clear_line(len(PREFIX_SHOW))
+    INPUT_CMD = ''
 
+print ('press Ctrl+C to quit')
 if not os.path.exists(CONFIG_DIRECTORY):
     print ('\r', end='')
     print (CONFIG_DIRECTORY, 'is not exist, creating it...')
@@ -232,6 +275,7 @@ if not os.path.exists(LOGIN_HISTORY_FILE):
     print ('create an empty', LOGIN_HISTORY_FILE)
     os.mknod(LOGIN_HISTORY_FILE)
 
+print ('\r', end='')
 print ('press Ctrl+C to quit')
 esc_flag = 0
 esc_time = time.time()
@@ -274,7 +318,7 @@ while True:
         if re.match('help ', INPUT_CMD):
             action_help(INPUT_CMD)
         elif re.match('login ', INPUT_CMD):
-            action_login(INPUT_CMD)
+            action_login(INPUT_CMD, KEY.TAB)
         elif CURRENT_STATE == 'STATE_CMD_INPUT':
             show_support_cmd(INPUT_CMD)
             clear_line(len(PREFIX_SHOW))
@@ -289,8 +333,8 @@ while True:
         # return key
         if re.match('help', INPUT_CMD):
             action_help(INPUT_CMD)
-        if re.match('login', INPUT_CMD):
-            action_login(INPUT_CMD)
+        elif re.match('login', INPUT_CMD):
+            action_login(INPUT_CMD, KEY.ENTER)
         elif INPUT_CMD == 'exit':
             print ('')
             exit()

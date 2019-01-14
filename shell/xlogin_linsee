@@ -1,0 +1,4 @@
+#!/bin/bash
+
+sshpass -p Tlf69018172# ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no fenghxu@$1
+

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#if [ ! -n "$1" ]; then
+#    echo "$(basename $0) qemupc"
+#    exit
+#fi
+
+qemupc_ip=$1
+if [ ${#qemupc_ip} -eq 0 ]; then
+    qemupc_ip="10.106.231.29"
+elif [ ${#qemupc_ip} -lt 4 ]; then
+    qemupc_ip="10.106.231.$1"
+else
+    qemupc_ip=$1
+fi
+
+sshpass -p fenghxu ssh -o StrictHostKeyChecking=no root@$qemupc_ip
+

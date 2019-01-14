@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ ! -n "$1" ]; then
+    echo "$(basename $0) oam"
+    exit
+fi
+
+oam_ip=$1
+if [ ${#oam_ip} -lt 4 ]; then
+    oam_ip="10.106.230.$1"
+else
+    oam_ip=$1
+fi
+
+sshpass -p rastre1 ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no robot@$oam_ip
+

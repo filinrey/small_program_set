@@ -1,0 +1,7 @@
+for num in $(seq 32 128); do
+    dec=$((10#$num))
+    oct=$(printf '%o\n' $dec)
+    printf '%-8s%x' $dec $dec
+    printf \\t\\$oct\\n
+done
+

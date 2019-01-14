@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#if [ ! -n "$1" ]; then
+#    echo "$(basename $0) testpc"
+#    exit
+#fi
+
+testpc_ip=$1
+if [ ${#testpc_ip} -eq 0 ]; then
+    testpc_ip="10.106.231.137"
+elif [ ${#testpc_ip} -lt 4 ]; then
+    testpc_ip="10.106.231.$1"
+else
+    testpc_ip=$1
+fi
+
+sshpass -p uteadmin ssh -o StrictHostKeyChecking=no root@$testpc_ip
+

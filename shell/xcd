@@ -1,0 +1,51 @@
+#!/bin/bash
+
+COMMAND=$0
+
+function common()
+{
+    if [ -n "`echo $dir | grep "^\."`" ]; then
+        cd $1
+    elif [ -n "`echo $dir | grep "^\/"`" ]; then
+        cd $1
+    fi
+}
+
+function description()
+{
+    echo "$(basename $COMMAND) [-c][-f][-o]"
+    echo "-c: cd cmcc"
+    echo "-f: cd fast track"
+    echo "-o: cd opengrok-1.0/source"
+}
+
+if [ ! -n "$1" ]; then
+    description
+    return
+fi
+
+let OPTIND=1
+while getopts ":cfop" opt
+do
+    case "$opt" in
+        c)
+            cd /cygdrive/f/WorkSpace/fast_track/cmcc/
+            ;;
+        f)
+            cd /cygdrive/f/WorkSpace/fast_track/
+            ;;
+        o)
+            cd /cygdrive/d/XFH/SOFTWARE/opengrok-1.0.tar/opengrok-1.0/source/
+            ;;
+        p)
+            cd /cygdrive/f/WorkSpace/python/
+            ;;
+        ?)
+            echo "invalid option!"
+            description
+            let OPTIND=1
+            return
+            ;;
+    esac
+done
+let OPTIND=1

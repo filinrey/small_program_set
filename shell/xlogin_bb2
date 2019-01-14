@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ ! -n "$1" ]; then
+    echo "$(basename $0) oam"
+    exit
+fi
+
+bb2_ip=$1
+if [ ${#bb2_ip} -lt 4 ]; then
+    bb2_ip="10.106.231.$1"
+else
+    bb2_ip=$1
+fi
+
+sshpass -p RCP_owner ssh -o StrictHostKeyChecking=no _rcpadmin@$bb2_ip
+

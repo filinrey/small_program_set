@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#if [ ! -n "$1" ]; then
+#    echo "$(basename $0) oam"
+#    exit
+#fi
+
+ctrl_ip=$1
+if [ ${#ctrl_ip} -lt 4 ]; then
+    ctrl_ip="10.57.137.228"
+else
+    ctrl_ip=$1
+fi
+
+sshpass -p Train03! ssh -o StrictHostKeyChecking=no ART01@$ctrl_ip
+

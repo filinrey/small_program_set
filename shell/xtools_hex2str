@@ -1,0 +1,7 @@
+for num in $@; do
+    hex=$((16#$num))
+    oct=$(printf '%o\n' $hex)
+    printf \\$oct
+done
+printf \\n
+

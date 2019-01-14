@@ -1,0 +1,7 @@
+for num in $@; do
+    dec=$((10#$num))
+    oct=$(printf '%o\n' $dec)
+    printf \\$oct
+done
+printf \\n
+

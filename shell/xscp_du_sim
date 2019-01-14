@@ -1,0 +1,79 @@
+#!/bin/bash
+
+COMMAND=$0
+
+function description()
+{
+    echo "$(basename $COMMAND) [-a][-d][-e][-i][-o]"
+    echo "-a: action, 'from' or 'to'"
+    echo "-d: du simulator"
+    echo "-e: epc"
+    echo "-i: same as epc"
+    echo "-o: cu oam"
+    exit
+}
+
+if [ ! -n "$1" ]; then
+    description
+fi
+
+IP=""
+USER="root"
+PASSWORD="rootme"
+ACTION="from"
+LOCAL_FILE=""
+REMOTE_FILE=""
+SCP_COMMAND="scp -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no"
+let OPTIND=1
+while getopts ":a:d:eil:or:" opt
+do
+    case "$opt" in
+        a)
+            ACTION=$OPTARG
+            ;;
+        d)
+            IP=10.57.208."$OPTARG"
+            USER="root"
+            PASSWORD="rootme"
+            ;;
+        e)
+            IP=10.57.208.10
+            USER="root"
+            PASSWORD="rootme"
+            ;;
+        i)
+            IP=10.57.208.10
+            USER="root"
+            PASSWORD="rootme"
+            ;;
+        l)
+            LOCAL_FILE=$OPTARG
+            ;;
+        o)
+            IP=10.57.208.100
+            USER="robot"
+            PASSWORD="rastre1"
+            ;;
+        r)
+            REMOTE_FILE=$OPTARG
+            ;;
+        ?)
+            echo "invalid option!"
+            description
+            ;;
+    esac
+done
+
+if [[ x"REMOTE_FILE" == x"nodeoam" ]]; then
+    REMOTE_FILE="/opt/nokia/SS_MzOam/cloud-nodeoam/logs/"$REMOTE_FILE
+fi
+
+if [[ x"$ACTION" == x"from" ]]; then
+    echo "Trying to copy $REMOTE_FILE from $IP to $LOCAL_FILE"
+elif [[ x"$ACTION" == x"to" ]]; then
+    echo "Trying to copy $LOCAL_FILE to $REMOTE_FILE in $IP"
+else
+    echo "DON'T SUPPORT $ACTION"
+fi
+#sshpass -p $PASSWORD $SCP_COMMAND $du_user@$du_ip
+

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+SSH_COMMAND="ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no"
+let OPTIND=1
+while getopts ":ae:io:d:" opt
+do
+    case "$opt" in
+        a)
+            echo "trying to connect airphone"
+            ;;
+        d)
+            du_ip=10.57.208."$OPTARG"
+            echo "trying to connect du simulator $du_ip"
+            du_user="root"
+            du_password="rootme"
+            sshpass -p $du_password $SSH_COMMAND $du_user@$du_ip
+            ;;
+        e)
+            epc_ip=10.57.208."$OPTARG"
+            echo "trying to connect epc simulator $epc_ip"
+            epc_user="root"
+            epc_password="rootme"
+            sshpass -p $epc_password $SSH_COMMAND $epc_user@$epc_ip
+            ;;
+        i)
+            echo "trying to connect iphy"
+            ;;
+        o)
+            oam_ip=10.57.208."$OPTARG"
+            echo "trying to connect oam in cu $oam_ip"
+            oam_user=robot
+            oam_password="rastre1"
+            sshpass -p $oam_password $SSH_COMMAND $oam_user@$oam_ip
+            ;;
+        ?)
+            echo "invalid option!"
+            echo "$(basename $0) [-a][-d ip][-e][-i][-o]"
+            echo "-a: airphone"
+            echo "-d ip: du simulator, like -d 3"
+            echo "-e ip: epc simulator"
+            echo "-i: iphy"
+            echo "-o: oam in cu"
+            ;;
+    esac
+done
+
+

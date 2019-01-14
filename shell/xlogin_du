@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#if [ ! -n "$1" ]; then
+#    echo "$(basename $0) eecloud"
+#    exit
+#fi
+
+du_ip=$1
+if [ ${#du_ip} -lt 1 ]; then
+    du_ip="10.57.146.98"
+else
+    du_ip=$1
+fi
+
+sshpass -p oZPS0POrRieRtu ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no toor4nsn@$du_ip
+#sshpass -p nokia123 ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no root@$eecloud_ip
+

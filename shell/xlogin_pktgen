@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ ! -n "$1" ]; then
+    echo "$(basename $0) oam"
+    exit
+fi
+
+oam_ip=$1
+if [ ${#oam_ip} -lt 4 ]; then
+    oam_ip="10.56.16.$1"
+else
+    oam_ip=$1
+fi
+
+sshpass -p 5gr00t ssh -o StrictHostKeyChecking=no root@$oam_ip
+

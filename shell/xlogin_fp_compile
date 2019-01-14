@@ -1,0 +1,4 @@
+#!/bin/bash
+
+ssh -i auth.pem root@10.39.37.141
+

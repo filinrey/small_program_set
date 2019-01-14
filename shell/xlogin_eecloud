@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#if [ ! -n "$1" ]; then
+#    echo "$(basename $0) eecloud"
+#    exit
+#fi
+
+eecloud_ip=$1
+if [ ${#eecloud_ip} -lt 4 ]; then
+    eecloud_ip="10.183.67.127"
+    #eecloud_ip="10.182.45.108"
+else
+    eecloud_ip=$1
+fi
+
+sshpass -p 5gr00t ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no root@$eecloud_ip
+#sshpass -p nokia123 ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no root@$eecloud_ip
+

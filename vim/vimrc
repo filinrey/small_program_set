@@ -1,7 +1,7 @@
 set nocompatible    "be iMproved, required
 filetype off        "required
 
-set rtp+=/home/fenghxu/.vim/bundle/vundle.vim
+set rtp+=/home/fenghxu/.vim/bundle/Vundle.vim
 
 call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
@@ -9,6 +9,7 @@ Plugin 'flazz/vim-colorschemes'
 Plugin 'Lokaltog/vim-powerline'
 Plugin 'scrooloose/nerdtree'
 Plugin 'kien/ctrlp.vim'
+Plugin 'tacahiroy/ctrlp-funky'
 Plugin 'scrooloose/nerdcommenter'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'mattn/emmet-vim'
@@ -18,6 +19,9 @@ Plugin 'plasticboy/vim-markdown'
 "Plugin 'Valloric/YouCompleteMe'
 Plugin 'scrooloose/syntastic'
 Plugin 'tpope/vim-fugitive'
+Plugin 'vim-scripts/taglist.vim'
+Plugin 'ctags.vim'
+"Plugin 'brookhong/cscope.vim'
 call vundle#end()
 
 filetype plugin indent on
@@ -28,6 +32,29 @@ autocmd bufenter *
             \ b:NERDTree.isTabTree()) | q |
             \ endif
 let NERDTreeShowHidden = 1
+
+let g:ctrlp_map = '<c-p>'
+let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_working_path_mode = '0'
+let g:ctrlp_custom_ignore = {
+    \ 'dir':    '\v[\/]\.(git|svn)$',
+    \ 'file':   '\v\.(exe|so|dll|zip|tar|tar.gz|pyc|o)$',
+    \ }
+"默认使用全路径搜索，置1后按文件名搜索，准确率会有所提高，可以用<C-d>进行切换
+let g:ctrlp_by_filename = 1
+"默认不使用正则表达式，置1改为默认使用正则表达式，可以用<C-r>进行切换
+let g:ctrlp_regexp = 0
+
+map <F4> :CtrlPFunky<cr>
+let g:ctrlp_extensions = ['funky']
+let g:ctrlp_funky_syntax_highlight = 1
+
+map <F5> :Tlist<cr>
+let Tlist_Ctags_Cmd = 'ctags'
+let Tlist_Show_One_File = 1
+let Tlist_Exit_OnlyWindow = 1
+let Tlist_Use_Right_Window = 1
+let Tlist_GainFocus_On_ToggleOpen = 1
 
 set foldmethod=syntax
 set foldlevelstart=99
@@ -98,7 +125,7 @@ set noswapfile
 set nu
 set mouse-=a
 syntax on
-colorscheme monokai
+"colorscheme monokai
 set backspace=indent,eol,start
 
 set ts=4

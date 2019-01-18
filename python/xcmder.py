@@ -10,12 +10,13 @@ import re
 import os.path
 import shutil
 from key import KEY
+from xlogger import xlogger
 
 PYFILE_NAME = sys.argv[0][sys.argv[0].rfind(os.sep) + 1:]
 PREFIX_NAME = PYFILE_NAME + "# "
 PREFIX_SHOW = PREFIX_NAME
 
-CONFIG_DIRECTORY = sys.path[0] + '/'  + PYFILE_NAME.split('.')[0]
+CONFIG_DIRECTORY = sys.path[0] + '/data'
 # LOGIN_HISTORY_FILE Format:
 # [NAME]    [IP]    [USER]    [PASSWORD]
 # every item is split by 4 blank, key is NAME and is unique.
@@ -26,7 +27,8 @@ LOGIN_HISTORY_FILE = CONFIG_DIRECTORY + '/login_history'
 CMD_HISTORY_FILE = CONFIG_DIRECTORY + '/cmd_history'
 MAX_NUM_CMD_HISTORY = 20
 
-SUPPORT_CMD = ['exit', 'help', 'login', 'update', 'remove']
+SUPPORT_CMD = ['exit', 'help', 'history', 'login', 'remove', 'update']
+HISTORY_TYPE = ['login', 'command']
 STATES = ['STATE_CMD_INPUT', 'STATE_CMD_OPTION']
 CURRENT_STATE = STATES[0]
 INPUT_CMD = ''
@@ -73,11 +75,26 @@ def show_help_update():
     print ('\r', end='')
     print ('\tit can be covered by login, not usable currently')
 
+def show_help_history():
+    print ('\r')
+    print ('\r', end='')
+    print ('\t# history [TYPE]')
+    print ('\r', end='')
+    print ('')
+    print ('\r', end='')
+    print ('\tTYPE should be:')
+    for h_type in HISTORY_TYPE:
+        print ('\r', end='')
+        print ('\t               ', h_type)
+    print ('\r', end='')
+    print ('\tNOTE: command TYPE is not usable')
+
 CMD_HELP_FUNC = {
                  'help': show_help_help,
                  'exit': show_help_exit,
                  'login': show_help_login,
                  'update': show_help_update,
+                 'history': show_help_history,
                 }
 
 def clear_line(length):
@@ -85,15 +102,15 @@ def clear_line(length):
     padding = length * ' '
     print (padding, end='')
 
-def show_support_cmd(command):
+def show_match_string(string, string_list):
     flag = True
-    for cmd in SUPPORT_CMD:
-        if len(command) == 0 or re.match(command, cmd):
+    for string_item in string_list:
+        if len(string) == 0 or re.match(string, string_item):
             if flag:
                 flag = False
                 print ('\r')
             print ('\r', end='')
-            print ('\t', cmd)
+            print ('\t', string_item)
 
 def get_max_same_string(command):
     max_same_string = command
@@ -122,14 +139,11 @@ def get_max_same_string(command):
     
     return max_same_string
 
-def show_command_list():
-    show_support_cmd('')
-
 def action_help(command):
     global PREFIX_SHOW
     global INPUT_CMD
     if command == 'help':
-        show_command_list()
+        show_match_string('', SUPPORT_CMD)
         clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
     if re.match('help ', command) == None:
@@ -145,26 +159,36 @@ def action_help(command):
 
 def show_login_history(name=None):
     seq = 0
-    print ('\r')
+    first_print = True
     try:
+        xlogger.debug('Read login history from {}'.format(LOGIN_HISTORY_FILE))
         f = open(LOGIN_HISTORY_FILE, 'r')
         line = f.readline()
         new_line = ''
         while line:
             sub_cmds = line.strip('\n').split()
             if len(sub_cmds) != 4:
+                line = f.readline()
                 continue
+            xlogger.debug('NAME: {}, IP: {}, USER: {}'.format(sub_cmds[0], sub_cmds[1], sub_cmds[2]))
             if name and re.match(name, sub_cmds[0]) == None:
+                line = f.readline()
                 continue
             new_line = new_line + '    \t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1]
             seq += 1
             if seq == 3:
                 seq = 0
+                if first_print:
+                    print ('\r')
+                    first_print = False
                 print ('\r', end='')
                 print (new_line)
                 new_line = ''
             line = f.readline()
         if seq:
+            if first_print:
+                print ('\r')
+                first_print = False
             print ('\r', end='')
             print (new_line)
     finally:
@@ -183,6 +207,7 @@ def get_login_history_by_name(name):
         while line:
             sub_cmds = line.strip('\n').split()
             if len(sub_cmds) != 4:
+                line = f.readline()
                 continue
             if name == sub_cmds[0]:
                 f.close()
@@ -190,6 +215,7 @@ def get_login_history_by_name(name):
                         'ip': sub_cmds[1],
                         'user': sub_cmds[2],
                         'password': sub_cmds[3]}
+            line = f.readline()
     finally:
         if f:
             f.close()
@@ -229,7 +255,6 @@ def update_login_history(name, ip, user, password):
         else:
             os.remove(LOGIN_HISTORY_FILE + '.tmp')
 
-
 def action_login(command, key):
     global PREFIX_SHOW
     global INPUT_CMD
@@ -252,20 +277,54 @@ def action_login(command, key):
             show_login_history(sub_cmds[1])
         if key == KEY.ENTER:
             login_option = get_login_history_by_name(sub_cmds[1])
+            print ('\r')
+            print ('\r', end='')
             if login_option:
-                print ('\r')
-                print ('\r', end='')
                 show_info = '[' + login_option['name'] + '] -> ' + login_option['user'] + '@' + login_option['ip']
-                print (show_info)
+            else:
+                show_info = 'No such name in history'
+            print (show_info)
+            clear_line(len(PREFIX_SHOW))
+            INPUT_CMD = ''
+            system_command = 'sshpass -p ' + login_option['password'] + \
+		             ' ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no ' + \
+                             login_option['user'] + '@' + login_option['ip']
+            xlogger.debug('run system command - {}'.format(system_command))
+            os.system(system_command)
 
     if len(sub_cmds) == 5:
         update_login_history(sub_cmds[1], sub_cmds[2], sub_cmds[3], sub_cmds[4])
-        
-    print ('\r')
-    clear_line(len(PREFIX_SHOW))
-    INPUT_CMD = ''
+        system_command = 'sshpass -p ' + sub_cmds[4] + \
+		         ' ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no ' + \
+                         sub_cmds[3] + '@' + sub_cmds[2]
+        xlogger.debug('run system command - {}'.format(system_command))
+        os.system(system_command)
+        clear_line(len(PREFIX_SHOW))
+        INPUT_CMD = ''
 
-print ('press Ctrl+C to quit')
+def action_history(command, key):
+    global PREFIX_SHOW
+    global INPUT_CMD
+    if re.match('history ', command) == None:
+        return
+    if command == 'help ':
+        CMD_HELP_FUNC['help']()
+        return
+    length = len('help ')
+    if CMD_HELP_FUNC.has_key(command[length:]):
+        CMD_HELP_FUNC[command[length:]]()
+        clear_line(len(PREFIX_SHOW))
+        INPUT_CMD = ''
+
+if len(sys.argv) >= 2 and sys.argv[1] == 'install':
+    link_name = '/usr/bin/' + PYFILE_NAME.split('.')[0]
+    system_command = 'sudo rm -f ' + link_name
+    os.system(system_command)
+    system_command = 'sudo ln -s ' + os.path.realpath(__file__) + ' ' + link_name
+    os.system(system_command)
+    print ('create {} link to {}'.format(link_name, os.path.realpath(__file__)))
+    exit()
+
 if not os.path.exists(CONFIG_DIRECTORY):
     print ('\r', end='')
     print (CONFIG_DIRECTORY, 'is not exist, creating it...')
@@ -320,7 +379,7 @@ while True:
         elif re.match('login ', INPUT_CMD):
             action_login(INPUT_CMD, KEY.TAB)
         elif CURRENT_STATE == 'STATE_CMD_INPUT':
-            show_support_cmd(INPUT_CMD)
+            show_match_string(INPUT_CMD, SUPPORT_CMD)
             clear_line(len(PREFIX_SHOW))
             INPUT_CMD = get_max_same_string(INPUT_CMD)
     elif ord(ch) == 0x7f:

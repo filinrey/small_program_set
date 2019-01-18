@@ -1,0 +1,10 @@
+[How to install]
+1. # git clone https://github.com/filinrey/small_program_set.git
+2. # cd small_program_set/python
+3. # ./xcmder.py install
+
+Then can use 'xcmder' in anywhere.
+
+[How to use]
+1. # xcmder 
+2. type help or TAB key to show relative commands

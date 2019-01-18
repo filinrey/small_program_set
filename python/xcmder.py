@@ -15,15 +15,15 @@ PYFILE_NAME = sys.argv[0][sys.argv[0].rfind(os.sep) + 1:]
 PREFIX_NAME = PYFILE_NAME + "# "
 PREFIX_SHOW = PREFIX_NAME
 
-CONFIG_DIRECTORY = '/etc/xcmder'
+CONFIG_DIRECTORY = sys.path[0] + '/'  + PYFILE_NAME.split('.')[0]
 # LOGIN_HISTORY_FILE Format:
 # [NAME]    [IP]    [USER]    [PASSWORD]
 # every item is split by 4 blank, key is NAME and is unique.
-LOGIN_HISTORY_FILE = '/etc/xcmder/login_history'
+LOGIN_HISTORY_FILE = CONFIG_DIRECTORY + '/login_history'
 # CMD_HISTORY_FILE Format:
 # [INDEX]    [COMMAND]
 # key is INDEX and is unique. store almost 20 histories.
-CMD_HISTORY_FILE = '/etc/xcmder/cmd_history'
+CMD_HISTORY_FILE = CONFIG_DIRECTORY + '/cmd_history'
 MAX_NUM_CMD_HISTORY = 20
 
 SUPPORT_CMD = ['exit', 'help', 'login', 'update', 'remove']

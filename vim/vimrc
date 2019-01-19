@@ -22,6 +22,7 @@ Plugin 'tpope/vim-fugitive'
 Plugin 'vim-scripts/taglist.vim'
 Plugin 'ctags.vim'
 "Plugin 'brookhong/cscope.vim'
+Plugin 'sickill/vim-monokai'
 call vundle#end()
 
 filetype plugin indent on
@@ -125,7 +126,7 @@ set noswapfile
 set nu
 set mouse-=a
 syntax on
-"colorscheme monokai
+colorscheme monokai
 set backspace=indent,eol,start
 
 set ts=4

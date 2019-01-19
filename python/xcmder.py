@@ -316,6 +316,7 @@ def action_history(command, key):
         clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
 
+xlogger.info('run {}'.format(PYFILE_NAME))
 if len(sys.argv) >= 2 and sys.argv[1] == 'install':
     link_name = '/usr/bin/' + PYFILE_NAME.split('.')[0]
     system_command = 'sudo rm -f ' + link_name

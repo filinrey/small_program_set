@@ -29,8 +29,6 @@ MAX_NUM_CMD_HISTORY = 20
 
 SUPPORT_CMD = ['exit', 'help', 'history', 'login', 'remove', 'update']
 HISTORY_TYPE = ['login', 'command']
-STATES = ['STATE_CMD_INPUT', 'STATE_CMD_OPTION']
-CURRENT_STATE = STATES[0]
 INPUT_CMD = ''
 CUR_POS = 0
 
@@ -141,11 +139,9 @@ def get_max_same_string(command):
     return max_same_string
 
 def action_help(command):
-    global PREFIX_SHOW
     global INPUT_CMD
     if command == 'help':
         show_match_string('', SUPPORT_CMD)
-        clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
         CUR_POS = 0
     if re.match('help ', command) == None:
@@ -156,7 +152,6 @@ def action_help(command):
     length = len('help ')
     if CMD_HELP_FUNC.has_key(command[length:]):
         CMD_HELP_FUNC[command[length:]]()
-        clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
         CUR_POS = 0
 
@@ -259,7 +254,6 @@ def update_login_history(name, ip, user, password):
             os.remove(LOGIN_HISTORY_FILE + '.tmp')
 
 def action_login(command, key):
-    global PREFIX_SHOW
     global INPUT_CMD
     if command == 'login ':
         if os.path.getsize(LOGIN_HISTORY_FILE) == 0:
@@ -287,7 +281,6 @@ def action_login(command, key):
             else:
                 show_info = 'No such name in history'
             print (show_info)
-            clear_line(len(PREFIX_SHOW))
             INPUT_CMD = ''
             CUR_POS = 0
             system_command = 'sshpass -p ' + login_option['password'] + \
@@ -303,12 +296,10 @@ def action_login(command, key):
                          sub_cmds[3] + '@' + sub_cmds[2]
         xlogger.debug('run system command - {}'.format(system_command))
         os.system(system_command)
-        clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
         CUR_POS = 0
 
 def action_history(command, key):
-    global PREFIX_SHOW
     global INPUT_CMD
     if re.match('history ', command) == None:
         return
@@ -318,7 +309,6 @@ def action_history(command, key):
     length = len('help ')
     if CMD_HELP_FUNC.has_key(command[length:]):
         CMD_HELP_FUNC[command[length:]]()
-        clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
         CUR_POS = 0
 
@@ -350,6 +340,7 @@ while True:
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(fd)
+        clear_line(len(PREFIX_SHOW))
         print ('\r', end='')
         PREFIX_SHOW = PREFIX_NAME + INPUT_CMD
         print (PREFIX_SHOW, end='')
@@ -407,8 +398,6 @@ while True:
             new_input_cmd = INPUT_CMD[:(CUR_POS - 1)] + INPUT_CMD[CUR_POS:]
             INPUT_CMD = new_input_cmd
             CUR_POS -= 1
-            clear_line(len(PREFIX_SHOW))
-            print ("\r", end='')
     elif ord(ch) == 0x0d:
         # return key
         if re.match('help', INPUT_CMD):
@@ -425,7 +414,5 @@ while True:
         INPUT_CMD = new_input_cmd
         xlogger.info('add {} to be {}'.format(ch, INPUT_CMD))
         CUR_POS += 1
-        PREFIX_SHOW = PREFIX_NAME + INPUT_CMD
-        print ("\r", end='')
     else:
         print ('unshowed key is', ord(ch))

@@ -9,97 +9,27 @@ import time
 import re
 import os.path
 import shutil
-from key import KEY
+from xdefine import XKey, XConst
 from xlogger import xlogger
+from xssh import xssh_action
 
-PYFILE_NAME = sys.argv[0][sys.argv[0].rfind(os.sep) + 1:]
-PREFIX_NAME = PYFILE_NAME + "# "
-PREFIX_SHOW = PREFIX_NAME
-
-CONFIG_DIRECTORY = sys.path[0] + '/data'
-# LOGIN_HISTORY_FILE Format:
-# [NAME]    [IP]    [USER]    [PASSWORD]
-# every item is split by 4 blank, key is NAME and is unique.
-LOGIN_HISTORY_FILE = CONFIG_DIRECTORY + '/login_history'
-# CMD_HISTORY_FILE Format:
-# [INDEX]    [COMMAND]
-# key is INDEX and is unique. store almost 20 histories.
-CMD_HISTORY_FILE = CONFIG_DIRECTORY + '/cmd_history'
-MAX_NUM_CMD_HISTORY = 20
-
-SUPPORT_CMD = ['exit', 'help', 'history', 'login', 'remove', 'update']
-HISTORY_TYPE = ['login', 'command']
+PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
 CUR_POS = 0
 
-def show_help_help():
-    print ('\r')
-    print ('\r', end='')
-    print ('\t# help [COMMAND]')
-    print ('\r', end='')
-    print ('')
-    print ('\r', end='')
-    print ('\tCOMMAND should be:')
-    for cmd in SUPPORT_CMD:
-        if cmd != 'help':
-            print ('\r', end='')
-            print ('\t                  ', cmd)
-
-def show_help_exit():
-    print ('\r')
-    print ('\r', end='')
-    print ('\t# exit')
-
-def show_help_login():
-    print ('\r')
-    print ('\r', end='')
-    print ('\t# login [NAME] [IP] [USER] [PASSWORD]')
-    print ('\r')
-    print ('\r', end='')
-    print ('\tExample 1: login DU10 // DU10 is name of one history which had been logined by using this program')
-    print ('\r')
-    print ('\r', end='')
-    print ('\tExample 2: login DU10 1.2.3.4 root rootme')
-    print ('\r', end='')
-    print ('\t           -> NAME=DU10, IP=1.2.3.4, USER=root PASSWORD=rootme')
-    print ('\r', end='')
-    print ('\t           -> if login firstly, will store it as login history with DU10. DU10 can be used directly next time as Example 1')
-    print ('\r', end='')
-    print ('\t           -> if DU10 is already exist in login history, will replace the old one.')
-
-def show_help_update():
-    print ('\r')
-    print ('\r', end='')
-    print ('\t# update [NAME] [IP] [USER] [PASSWORD]')
-    print ('\r', end='')
-    print ('\tit can be covered by login, not usable currently')
-
-def show_help_history():
-    print ('\r')
-    print ('\r', end='')
-    print ('\t# history [TYPE]')
-    print ('\r', end='')
-    print ('')
-    print ('\r', end='')
-    print ('\tTYPE should be:')
-    for h_type in HISTORY_TYPE:
-        print ('\r', end='')
-        print ('\t               ', h_type)
-    print ('\r', end='')
-    print ('\tNOTE: command TYPE is not usable')
-
-CMD_HELP_FUNC = {
-                 'help': show_help_help,
-                 'exit': show_help_exit,
-                 'login': show_help_login,
-                 'update': show_help_update,
-                 'history': show_help_history,
-                }
+ACTION_LIST = {
+    'name': XConst.PYFILE_NAME,
+    'action': None,
+    'sub_cmds': [
+        xssh_action,
+    ]
+}
 
 def clear_line(length):
     print ("\r", end='')
     padding = length * ' '
     print (padding, end='')
+
 
 def show_match_string(string, string_list):
     flag = True
@@ -111,13 +41,14 @@ def show_match_string(string, string_list):
             print ('\r', end='')
             print ('\t', string_item)
 
-def get_max_same_string(command):
+
+def get_max_same_string(command, cmd_list):
     max_same_string = command
     if len(command) == 0:
         return max_same_string
 
     match_strings = []
-    for cmd in SUPPORT_CMD:
+    for cmd in cmd_list:
         if re.match(command, cmd):
             match_strings.append(cmd)
 
@@ -138,9 +69,42 @@ def get_max_same_string(command):
     
     return max_same_string
 
-def action_help(command):
+
+def show_command_list(command):
     global INPUT_CMD
     global CUR_POS
+    sub_cmds = ['']
+    if len(command) == 0:
+        num_sub_cmd = 1
+    else:
+        sub_cmds = command.split()
+        num_sub_cmd = len(sub_cmds)
+        if command[len(command) - 1] == ' ':
+            num_sub_cmd += 1
+            sub_cmds.append('')
+    cmd_list = []
+    new_list = ACTION_LIST['sub_cmds']
+    i = 1
+    while i < num_sub_cmd:
+        if new_list['sub_cmds']:
+            new_list = new_list['sub_cmds']
+        i += 1
+    for item in new_list:
+        cmd_list.append(item['name'])
+
+    new_sub_cmd = get_max_same_string(sub_cmds[num_sub_cmd - 1], cmd_list)
+    show_match_string(new_sub_cmd, cmd_list)
+
+    new_input_cmd = ''
+    for i in range(num_sub_cmd - 1):
+        new_input_cmd += sub_cmds[i] + ' '
+    new_input_cmd += new_sub_cmd
+    INPUT_CMD = new_input_cmd
+    CUR_POS = len(INPUT_CMD)
+
+
+def action_help(command):
+    global INPUT_CMD
     if command == 'help':
         show_match_string('', SUPPORT_CMD)
         INPUT_CMD = ''
@@ -155,6 +119,7 @@ def action_help(command):
         CMD_HELP_FUNC[command[length:]]()
         INPUT_CMD = ''
         CUR_POS = 0
+
 
 def show_login_history(name=None):
     seq = 0
@@ -256,7 +221,6 @@ def update_login_history(name, ip, user, password):
 
 def action_login(command, key):
     global INPUT_CMD
-    global CUR_POS
     if command == 'login ':
         if os.path.getsize(LOGIN_HISTORY_FILE) == 0:
             print ('\r')
@@ -303,7 +267,6 @@ def action_login(command, key):
 
 def action_history(command, key):
     global INPUT_CMD
-    global CUR_POS
     if re.match('history ', command) == None:
         return
     if command == 'help ':

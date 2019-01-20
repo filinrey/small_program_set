@@ -32,6 +32,7 @@ HISTORY_TYPE = ['login', 'command']
 STATES = ['STATE_CMD_INPUT', 'STATE_CMD_OPTION']
 CURRENT_STATE = STATES[0]
 INPUT_CMD = ''
+CUR_POS = 0
 
 def show_help_help():
     print ('\r')
@@ -146,6 +147,7 @@ def action_help(command):
         show_match_string('', SUPPORT_CMD)
         clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
+        CUR_POS = 0
     if re.match('help ', command) == None:
         return
     if command == 'help ':
@@ -156,6 +158,7 @@ def action_help(command):
         CMD_HELP_FUNC[command[length:]]()
         clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
+        CUR_POS = 0
 
 def show_login_history(name=None):
     seq = 0
@@ -286,6 +289,7 @@ def action_login(command, key):
             print (show_info)
             clear_line(len(PREFIX_SHOW))
             INPUT_CMD = ''
+            CUR_POS = 0
             system_command = 'sshpass -p ' + login_option['password'] + \
 		             ' ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no ' + \
                              login_option['user'] + '@' + login_option['ip']
@@ -301,6 +305,7 @@ def action_login(command, key):
         os.system(system_command)
         clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
+        CUR_POS = 0
 
 def action_history(command, key):
     global PREFIX_SHOW
@@ -315,6 +320,7 @@ def action_history(command, key):
         CMD_HELP_FUNC[command[length:]]()
         clear_line(len(PREFIX_SHOW))
         INPUT_CMD = ''
+        CUR_POS = 0
 
 xlogger.info('run {}'.format(PYFILE_NAME))
 if len(sys.argv) >= 2 and sys.argv[1] == 'install':
@@ -347,6 +353,9 @@ while True:
         print ('\r', end='')
         PREFIX_SHOW = PREFIX_NAME + INPUT_CMD
         print (PREFIX_SHOW, end='')
+        print ('\r', end='')
+        new_prefix_show = PREFIX_NAME + INPUT_CMD[:CUR_POS]
+        print (new_prefix_show, end='')
         ch = sys.stdin.read(1)
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
@@ -364,6 +373,14 @@ while True:
             print ('press UP key')
         elif ch == 'B':
             print ('press DOWN key')
+        elif ch == 'D':
+            # LEFT key
+            if CUR_POS > 0:
+                CUR_POS -= 1
+        elif ch == 'C':
+            # RIGHT key
+            if CUR_POS < len(INPUT_CMD):
+                CUR_POS += 1
         esc_flag = 0
         continue
 
@@ -379,16 +396,19 @@ while True:
             action_help(INPUT_CMD)
         elif re.match('login ', INPUT_CMD):
             action_login(INPUT_CMD, KEY.TAB)
-        elif CURRENT_STATE == 'STATE_CMD_INPUT':
+        else:
             show_match_string(INPUT_CMD, SUPPORT_CMD)
             clear_line(len(PREFIX_SHOW))
             INPUT_CMD = get_max_same_string(INPUT_CMD)
+            CUR_POS = len(INPUT_CMD)
     elif ord(ch) == 0x7f:
         # backspace key
-        if CURRENT_STATE == 'STATE_CMD_INPUT':
-            INPUT_CMD = INPUT_CMD[0:-1]
+        if CUR_POS > 0:
+            new_input_cmd = INPUT_CMD[:(CUR_POS - 1)] + INPUT_CMD[CUR_POS:]
+            INPUT_CMD = new_input_cmd
+            CUR_POS -= 1
             clear_line(len(PREFIX_SHOW))
-        print ("\r", end='')
+            print ("\r", end='')
     elif ord(ch) == 0x0d:
         # return key
         if re.match('help', INPUT_CMD):
@@ -401,10 +421,11 @@ while True:
         else:
             print ('')
     elif ord(ch) >= 32 and ord(ch) <= 126:
-        if CURRENT_STATE == 'STATE_CMD_INPUT':
-            INPUT_CMD = INPUT_CMD + ch
-            PREFIX_SHOW = PREFIX_NAME + INPUT_CMD
+        new_input_cmd = INPUT_CMD[:CUR_POS] + ch + INPUT_CMD[CUR_POS:]
+        INPUT_CMD = new_input_cmd
+        xlogger.info('add {} to be {}'.format(ch, INPUT_CMD))
+        CUR_POS += 1
+        PREFIX_SHOW = PREFIX_NAME + INPUT_CMD
         print ("\r", end='')
     else:
         print ('unshowed key is', ord(ch))
-

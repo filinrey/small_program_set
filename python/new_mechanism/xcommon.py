@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import re
+
 
 def get_max_same_string(pattern, string_list):
     max_same_string = pattern

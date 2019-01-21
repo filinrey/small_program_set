@@ -16,6 +16,7 @@ from xcd import xcd_action
 from xexit import xexit_action
 from xhistory import store_command, fetch_command
 from xprint import xprint_new_line
+from xcommon import get_max_same_string
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -84,9 +85,6 @@ def get_sub_command_list(sub_cmds, key):
         elif sub_cmd_info.has_key('action') and sub_cmd_info['action']:
             xlogger.debug('command \'{}\' only have action'.format(sub_cmds[i - 1]))
             if key == XKey.TAB:
-                sub_cmd_info['action'](sub_cmds[i:], key)
-                return None
-            if key == XKey.ENTER:
                 result = sub_cmd_info['action'](sub_cmds[i:], key)
                 if result and result.has_key('flag') and result['flag'] and result.has_key('new_cmd'):
                     new_command = ''
@@ -95,6 +93,9 @@ def get_sub_command_list(sub_cmds, key):
                     new_command += result['new_cmd']
                     INPUT_CMD = new_command
                     CUR_POS = len(INPUT_CMD)
+                return None
+            if key == XKey.ENTER:
+                sub_cmd_info['action'](sub_cmds[i:], key)
                 return []
             if key == XKey.SPACE:
                 return []

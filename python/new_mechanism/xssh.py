@@ -9,6 +9,7 @@ import shutil
 from xdefine import XKey, xkey_to_str, XConst
 from xlogger import xlogger
 from xprint import xprint_new_line, xprint_head
+from xcommon import get_max_same_string
 
 
 def show_login_help():
@@ -28,15 +29,18 @@ def show_login_history(name=None):
     login_file = open(XConst.LOGIN_HISTORY_FILE, 'r')
     line = login_file.readline()
     new_line = ''
+    match_name_list = []
     while line:
         sub_cmds = line.strip('\n').split()
         if len(sub_cmds) != XConst.NUM_ELEM_PER_LOGIN_HISTORY_ITEM:
             line = login_file.readline()
             continue
         xlogger.debug('NAME: {}, IP: {}, USER: {}'.format(sub_cmds[0], sub_cmds[1], sub_cmds[2]))
-        if name and re.match(name, sub_cmds[0]) == None:
-            line = login_file.readline()
-            continue
+        if name:
+            if re.match(name, sub_cmds[0]) == None:
+                line = login_file.readline()
+                continue
+            match_name_list.append(sub_cmds[0])
         new_line = new_line + '    \t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1]
         seq += 1
         count += 1
@@ -51,6 +55,7 @@ def show_login_history(name=None):
         xprint_head(new_line)
     if count == 0 and name == None:
         xprint_head('\tthere is no login history')
+    return match_name_list
 
 
 def action_login(cmds, key):
@@ -65,8 +70,10 @@ def action_login(cmds, key):
         show_login_history()
         return
     if num_cmd == 1 and key == XKey.TAB:
-        show_login_history(cmds[0])
-        return
+        match_name_list = show_login_history(cmds[0])
+        new_cmd, _ = get_max_same_string(cmds[0], match_name_list)
+        xlogger.debug('find new cmd {} from login history'.format(new_cmd))
+        return {'flag': True, 'new_cmd': new_cmd}
 
 
 def action_check(cmds, key):

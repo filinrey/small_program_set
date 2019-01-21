@@ -285,11 +285,12 @@ def action_login(command, key):
             print (show_info)
             INPUT_CMD = ''
             CUR_POS = 0
-            system_command = 'sshpass -p ' + login_option['password'] + \
-		             ' ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no ' + \
-                             login_option['user'] + '@' + login_option['ip']
-            xlogger.debug('run system command - {}'.format(system_command))
-            os.system(system_command)
+            if login_option:
+                system_command = 'sshpass -p ' + login_option['password'] + \
+		                         ' ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=no ' + \
+                                 login_option['user'] + '@' + login_option['ip']
+                xlogger.debug('run system command - {}'.format(system_command))
+                os.system(system_command)
 
     if len(sub_cmds) == 5:
         update_login_history(sub_cmds[1], sub_cmds[2], sub_cmds[3], sub_cmds[4])

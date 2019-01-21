@@ -217,17 +217,19 @@ if not os.path.exists(XConst.CMD_HISTORY_FILE):
 print ('\r', end='')
 print ('press Ctrl+C to quit')
 esc_flag = 0
+left_right_key_flag = False
 esc_time = time.time()
 while True:
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(fd)
-        clear_line(len(PREFIX_SHOW))
-        print ('\r', end='')
-        PREFIX_SHOW = XConst.PREFIX_NAME + INPUT_CMD
-        print (PREFIX_SHOW, end='')
-        if CUR_POS != len(INPUT_CMD):
+        if not left_right_key_flag:
+            clear_line(len(PREFIX_SHOW))
+            print ('\r', end='')
+            PREFIX_SHOW = XConst.PREFIX_NAME + INPUT_CMD
+            print (PREFIX_SHOW, end='')
+        if CUR_POS != len(INPUT_CMD) or left_right_key_flag:
             print ('\r', end='')
             new_prefix_show = XConst.PREFIX_NAME + INPUT_CMD[:CUR_POS]
             print (new_prefix_show, end='')
@@ -259,13 +261,16 @@ while True:
             # LEFT key
             if CUR_POS > 0:
                 CUR_POS -= 1
+            left_right_key_flag = True
         elif ch == 'C':
             # RIGHT key
             if CUR_POS < len(INPUT_CMD):
                 CUR_POS += 1
+            left_right_key_flag = True
         esc_flag = 0
         continue
 
+    left_right_key_flag = False
     esc_flag = 0
     CMD_HISTORY_LINE_NO = 0
 

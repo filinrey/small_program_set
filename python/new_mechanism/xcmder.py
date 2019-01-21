@@ -15,6 +15,7 @@ from xssh import xssh_action
 from xcd import xcd_action
 from xexit import xexit_action
 from xhistory import store_command, fetch_command
+from xprint import xprint_new_line
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -48,34 +49,6 @@ def show_match_string(string, string_list):
             print ('\t', string_item)
 
 
-def get_max_same_string(command, cmd_list):
-    max_same_string = command
-    if len(command) == 0:
-        return (max_same_string, False)
-
-    match_strings = []
-    for cmd in cmd_list:
-        if re.match(command, cmd):
-            match_strings.append(cmd)
-
-    if len(match_strings) == 0:
-        return (max_same_string, False)
-    first_match_string_length = len(match_strings[0])
-    index = len(command)
-    break_flag = False
-    for i in range(index, first_match_string_length):
-        temp = max_same_string + match_strings[0][i]
-        for cmd in match_strings[1:]:
-            if re.match(temp, cmd) == None:
-                break_flag = True
-                break
-        if break_flag:
-            break
-        max_same_string = max_same_string + match_strings[0][i]
-    
-    return (max_same_string, True)
-
-
 def get_sub_command_info(sub_cmd, cmd_list):
     new_list = cmd_list
     for item in new_list:
@@ -96,6 +69,8 @@ def get_sub_command_info(sub_cmd, cmd_list):
 
 
 def get_sub_command_list(sub_cmds, key):
+    global INPUT_CMD
+    global CUR_POS
     cmd_list = []
     num_sub_cmd = len(sub_cmds)
     new_list = ACTION_LIST['sub_cmds']
@@ -112,7 +87,14 @@ def get_sub_command_list(sub_cmds, key):
                 sub_cmd_info['action'](sub_cmds[i:], key)
                 return None
             if key == XKey.ENTER:
-                sub_cmd_info['action'](sub_cmds[i:], key)
+                result = sub_cmd_info['action'](sub_cmds[i:], key)
+                if result and result.has_key('flag') and result['flag'] and result.has_key('new_cmd'):
+                    new_command = ''
+                    for j in range(i):
+                        new_command += sub_cmds[j] + ' '
+                    new_command += result['new_cmd']
+                    INPUT_CMD = new_command
+                    CUR_POS = len(INPUT_CMD)
                 return []
             if key == XKey.SPACE:
                 return []
@@ -191,9 +173,7 @@ def is_legal_space(command):
             _, result = get_max_same_string(last_sub_cmd, cmd_list)
             err_command = last_sub_cmd
     if not result:
-        print ('\r')
-        print ('\r', end='')
-        print ('\tno \'{}\' command'.format(err_command))
+        xprint_new_line('\tno \'{}\' command'.format(err_command))
         return False
 
     return True

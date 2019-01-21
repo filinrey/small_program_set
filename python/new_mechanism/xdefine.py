@@ -29,6 +29,8 @@ class XConst(object):
     # [NAME]    [IP]    [USER]    [PASSWORD]
     # every item is split by 4 blank, key is NAME and is unique.
     LOGIN_HISTORY_FILE = CONFIG_DIRECTORY + 'login_history'
+    NUM_ELEM_PER_LOGIN_HISTORY_ITEM = 4
+    NUM_ITEM_PER_LOGIN_HISTORY_LINE = 3
     
     # CMD_HISTORY_FILE Format:
     # [INDEX]    [COMMAND]

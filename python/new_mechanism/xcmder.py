@@ -69,9 +69,26 @@ def get_sub_command_info(sub_cmd, cmd_list):
     return None
 
 
-def get_sub_command_list(sub_cmds, key):
+def set_input_cmd_by_result(result, sub_cmds):
     global INPUT_CMD
     global CUR_POS
+    if result == None:
+        return
+    if not (result.has_key('flag') and result['flag']):
+        return
+    if result.has_key('new_sub_cmd'):
+        new_command = ''
+        for item in sub_cmds:
+            new_command += item + ' '
+        new_command += result['new_sub_cmd']
+        INPUT_CMD = new_command
+        CUR_POS = len(INPUT_CMD)
+    if result.has_key('new_input_cmd'):
+        INPUT_CMD = result['new_input_cmd']
+        CUR_POS = len(INPUT_CMD)
+
+
+def get_sub_command_list(sub_cmds, key):
     cmd_list = []
     num_sub_cmd = len(sub_cmds)
     new_list = ACTION_LIST['sub_cmds']
@@ -86,16 +103,11 @@ def get_sub_command_list(sub_cmds, key):
             xlogger.debug('command \'{}\' only have action'.format(sub_cmds[i - 1]))
             if key == XKey.TAB:
                 result = sub_cmd_info['action'](sub_cmds[i:], key)
-                if result and result.has_key('flag') and result['flag'] and result.has_key('new_cmd'):
-                    new_command = ''
-                    for j in range(i):
-                        new_command += sub_cmds[j] + ' '
-                    new_command += result['new_cmd']
-                    INPUT_CMD = new_command
-                    CUR_POS = len(INPUT_CMD)
+                set_input_cmd_by_result(result, sub_cmds[:i])
                 return None
             if key == XKey.ENTER:
-                sub_cmd_info['action'](sub_cmds[i:], key)
+                result = sub_cmd_info['action'](sub_cmds[i:], key)
+                set_input_cmd_by_result(result, sub_cmds[:i])
                 return []
             if key == XKey.SPACE:
                 return []
@@ -148,8 +160,6 @@ def run_command(command):
     get_sub_command_list(sub_cmds, XKey.ENTER)
     store_command(command)
     CMD_HISTORY_LINE_NO = 0
-    INPUT_CMD = ''
-    CUR_POS = 0
 
 
 def is_legal_space(command):

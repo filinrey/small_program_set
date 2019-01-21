@@ -43,7 +43,7 @@ def fetch_command(line_no):
         line = f.readline()
         num_line = 0
         while line:
-            xlogger.debug('read command history: {}'.format(line))
+            xlogger.debug('read command history: {}'.format(line.strip('\n')))
             num_line += 1
             if num_line == line_no:
                 command = line.strip('\n')

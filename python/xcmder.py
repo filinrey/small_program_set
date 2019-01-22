@@ -47,7 +47,7 @@ def show_match_string(string, string_list):
                 flag = False
                 print ('\r')
             print ('\r', end='')
-            print ('\t', string_item)
+            print ('\t{}'.format(string_item))
 
 
 def get_sub_command_info(sub_cmd, cmd_list):

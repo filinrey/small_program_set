@@ -155,7 +155,7 @@ def run_command(command):
     if len(sub_cmds) == 0:
         print ('')
         return
-    
+
     sub_cmds.append('')
     get_sub_command_list(sub_cmds, XKey.ENTER)
     store_command(command)
@@ -252,11 +252,13 @@ while True:
                 CMD_HISTORY_LINE_NO += 1
                 INPUT_CMD, CMD_HISTORY_LINE_NO = fetch_command(CMD_HISTORY_LINE_NO)
                 CUR_POS = len(INPUT_CMD)
+            left_right_key_flag = False
         elif ch == 'B':
             if CMD_HISTORY_LINE_NO > 0:
                 CMD_HISTORY_LINE_NO -= 1
                 INPUT_CMD, CMD_HISTORY_LINE_NO = fetch_command(CMD_HISTORY_LINE_NO)
                 CUR_POS = len(INPUT_CMD)
+            left_right_key_flag = False
         elif ch == 'D':
             # LEFT key
             if CUR_POS > 0:

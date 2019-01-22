@@ -17,5 +17,6 @@ def action_xcd(cmd, key):
 
 xcd_action = {
     'name': 'cd',
-    'action': action_xcd
+    'action': action_xcd,
+    'active': False
 }

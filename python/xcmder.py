@@ -91,14 +91,22 @@ def set_input_cmd_by_result(result, sub_cmds):
 def get_sub_command_list(sub_cmds, key):
     cmd_list = []
     num_sub_cmd = len(sub_cmds)
-    new_list = ACTION_LIST['sub_cmds']
+    new_list = []
+    for item in ACTION_LIST['sub_cmds']:
+        if item.has_key('active') and (not item['active']):
+            continue
+        new_list.append(item)
     i = 1
     while i < num_sub_cmd:
         sub_cmd_info = get_sub_command_info(sub_cmds[i - 1], new_list)
         if sub_cmd_info == None:
             return None
         if sub_cmd_info.has_key('sub_cmds') and sub_cmd_info['sub_cmds']:
-            new_list = sub_cmd_info['sub_cmds']
+            new_list = []
+            for item in sub_cmd_info['sub_cmds']:
+                if item.has_key('active') and (not item['active']):
+                    continue
+                new_list.append(item)
         elif sub_cmd_info.has_key('action') and sub_cmd_info['action']:
             xlogger.debug('command \'{}\' only have action'.format(sub_cmds[i - 1]))
             if key == XKey.TAB:

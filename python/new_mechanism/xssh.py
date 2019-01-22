@@ -41,7 +41,10 @@ def show_login_history(name=None):
                 line = f.readline()
                 continue
             match_name_list.append(sub_cmds[0])
-        new_line = new_line + '    \t' + sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1] + ' *' + sub_cmds[3]
+        new_item = sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1] + ' *' + sub_cmds[3]
+        if len(new_item) < XConst.MAX_SIZE_PER_LOGIN_HISTORY_ITEM:
+            new_item = new_item + ' '*(XConst.MAX_SIZE_PER_LOGIN_HISTORY_ITEM - len(new_item))
+        new_line = new_line + '\t' + new_item
         seq += 1
         count += 1
         if seq == XConst.NUM_ITEM_PER_LOGIN_HISTORY_LINE:

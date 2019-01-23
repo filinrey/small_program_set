@@ -299,7 +299,7 @@ while True:
             INPUT_CMD = new_input_cmd
             CUR_POS -= 1
     elif ord(ch) == 0x0d:
-        # return key
+        # enter key
         run_command(INPUT_CMD)
     elif ord(ch) >= 32 and ord(ch) <= 126:
         new_input_cmd = INPUT_CMD[:CUR_POS] + ch + INPUT_CMD[CUR_POS:]

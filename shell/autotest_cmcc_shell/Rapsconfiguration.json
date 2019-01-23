@@ -1,0 +1,37 @@
+{
+    "RAP":   
+    {
+        "RAP-10":    
+        {   
+            "IPAddress": "172.16.10.108",
+            "OAMAgentPort": 8666,
+            "NodeOAMPort": 8090,
+            "jsCommBridgePort": 1666,
+            "nodeID": "0x2011",
+            "OAMAgentjsPid": " ",
+            "nodeOAMPid": " ",
+            "jsCommBridgePid": " ",
+            "status": "0",
+            "refs": [
+                "/mz/p/v1/pbts/1/fsm/1",
+                "/mz/p/v1/pbts/1/frm/1",
+                "/mz/p/v1/pbts/1/frm/2",
+                "/mz/p/v1/pbts/1/fbb/1"
+            ],
+            "RF": {
+                "RF-1": {
+                    "refs": "/mz/p/v1/pbts/1/frm/1",
+                    "RFType": "FHFB"
+                },
+                "RF-2": {
+                    "refs": "/mz/p/v1/pbts/1/frm/2",
+                    "RFType": "FHFB"
+                }
+            },
+            "rapType": "FSMr4",
+            "moAddress": {
+                "uri": "/mz/c/v1/cbts/1/rap/10"
+            }
+        }
+    }
+}

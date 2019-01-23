@@ -40,7 +40,7 @@ def action_install(cmds, key):
 # active is optional, [no active item] = [active is True]
 xcd_action = {
     'name': 'cd',
-    'active': True,
+    'active': False,
     'sub_cmds': [
         {
             'name': 'install',

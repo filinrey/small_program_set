@@ -15,8 +15,9 @@ from xssh import xssh_action
 from xcd import xcd_action
 from xexit import xexit_action
 from xhistory import store_command, fetch_command
-from xprint import xprint_new_line
+from xprint import xprint_new_line, xprint_head
 from xcommon import get_max_same_string
+from xdefine import XPrintStyle
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -46,8 +47,7 @@ def show_match_string(string, string_list):
             if flag:
                 flag = False
                 print ('\r')
-            print ('\r', end='')
-            print ('\t{}'.format(string_item))
+            xprint_head('\t{}'.format(string_item), XPrintStyle.BLUE)
 
 
 def get_sub_command_info(sub_cmd, cmd_list):

@@ -8,12 +8,13 @@ import os.path
 import shutil
 from xdefine import XKey, xkey_to_str, XConst
 from xlogger import xlogger
-from xprint import xprint_new_line, xprint_head
+from xprint import xprint_new_line, xprint_head, format_color_string
 from xcommon import get_max_same_string
+from xdefine import XPrintStyle
 
 
 def show_login_help():
-    xprint_new_line('\t# ssh login [NAME] [IP] [USER] [PASSWORD]')
+    xprint_new_line('\t# ssh login [NAME] [IP] [USER] [PASSWORD]', XPrintStyle.YELLOW)
     xprint_head('\tExample 1: # ssh login DU10')
     xprint_head('\t           -> DU10 is name of one history which had been logined by using this program')
     xprint_head('\tExample 2: # ssh login DU10 1.2.3.4 root rootme')
@@ -41,7 +42,7 @@ def show_login_history(name=None):
                 line = f.readline()
                 continue
             match_name_list.append(sub_cmds[0])
-        new_item = sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1] + ' *' + sub_cmds[3]
+        new_item = format_color_string(sub_cmds[0], XPrintStyle.GREEN_U) + ': ' + sub_cmds[2] + '@' + sub_cmds[1] + ' *' + sub_cmds[3]
         if len(new_item) < XConst.MAX_SIZE_PER_LOGIN_HISTORY_ITEM:
             new_item = new_item + ' '*(XConst.MAX_SIZE_PER_LOGIN_HISTORY_ITEM - len(new_item))
         new_line = new_line + '\t' + new_item
@@ -164,7 +165,7 @@ def action_check(cmds, key):
 
 
 def show_remove_help():
-    xprint_new_line('\t# ssh remove [NAME | IP]')
+    xprint_new_line('\t# ssh remove [NAME | IP]', XPrintStyle.YELLOW)
     xprint_head('\t             -> NAME or IP can be regular expression or normal string')
     xprint_head('\tExample 1: # ssh remove du10')
     xprint_head('\tExample 2: # ssh remove 1.2.3.4')

@@ -198,6 +198,45 @@ def is_legal_space(command):
     return True
 
 
+def handle_arrow_key(key, esc_flag, esc_time, is_left_right_key):
+    global CMD_HISTORY_LINE_NO
+    global INPUT_CMD
+    global CUR_POS
+
+    if ord(key) == 27:
+        return (True, 1, time.time(), is_left_right_key)
+    elif esc_flag == 1:
+        if key == '[' and (time.time() - esc_time) < 0.01:
+            return (True, 2, esc_time, is_left_right_key)
+    elif esc_flag == 2:
+        if ch == 'A':
+            # UP key
+            if CMD_HISTORY_LINE_NO < XConst.MAX_NUM_CMD_HISTORY:
+                CMD_HISTORY_LINE_NO += 1
+                INPUT_CMD, CMD_HISTORY_LINE_NO = fetch_command(CMD_HISTORY_LINE_NO)
+                CUR_POS = len(INPUT_CMD)
+            is_left_right_key = False
+        elif ch == 'B':
+            if CMD_HISTORY_LINE_NO > 0:
+                CMD_HISTORY_LINE_NO -= 1
+                INPUT_CMD, CMD_HISTORY_LINE_NO = fetch_command(CMD_HISTORY_LINE_NO)
+                CUR_POS = len(INPUT_CMD)
+            is_left_right_key = False
+        elif ch == 'D':
+            # LEFT key
+            if CUR_POS > 0:
+                CUR_POS -= 1
+            is_left_right_key = True
+        elif ch == 'C':
+            # RIGHT key
+            if CUR_POS < len(INPUT_CMD):
+                CUR_POS += 1
+            is_left_right_key = True
+        return (True, 0, esc_time, is_left_right_key)
+
+    return (False, 0, esc_time, is_left_right_key)
+
+
 xlogger.info('='*32)
 xlogger.info('run {}'.format(XConst.PYFILE_NAME))
 if len(sys.argv) >= 2 and sys.argv[1] == 'install':
@@ -210,34 +249,30 @@ if len(sys.argv) >= 2 and sys.argv[1] == 'install':
     exit()
 
 if not os.path.exists(XConst.CONFIG_DIRECTORY):
-    print ('\r', end='')
-    print (XConst.CONFIG_DIRECTORY, 'is not exist, creating it...')
+    xprint_head('{} is not exists, create this directory'.format(XConst.CONFIG_DIRECTORY))
     os.makedirs(XConst.CONFIG_DIRECTORY)
 if not os.path.exists(XConst.LOGIN_HISTORY_FILE):
-    print ('\r', end='')
-    print ('create an empty', XConst.LOGIN_HISTORY_FILE)
+    xprint_head('create an empty {}'.format(XConst.LOGIN_HISTORY_FILE))
     os.mknod(XConst.LOGIN_HISTORY_FILE)
 if not os.path.exists(XConst.CMD_HISTORY_FILE):
-    print ('\r', end='')
-    print ('create an empty', XConst.CMD_HISTORY_FILE)
+    xprint_head('create an empty {}'.format(XConst.CMD_HISTORY_FILE))
     os.mknod(XConst.CMD_HISTORY_FILE)
 
-print ('\r', end='')
-print ('press Ctrl+C to quit')
+xprint_head('press Ctrl+C to quit')
 esc_flag = 0
-left_right_key_flag = False
+is_left_right_key = False
 esc_time = time.time()
 while True:
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(fd)
-        if not left_right_key_flag:
+        if not is_left_right_key:
             clear_line(len(PREFIX_SHOW))
             print ('\r', end='')
             PREFIX_SHOW = XConst.PREFIX_NAME + INPUT_CMD
             print (PREFIX_SHOW, end='')
-        if CUR_POS != len(INPUT_CMD) or left_right_key_flag:
+        if CUR_POS != len(INPUT_CMD) or is_left_right_key:
             print ('\r', end='')
             new_prefix_show = XConst.PREFIX_NAME + INPUT_CMD[:CUR_POS]
             print (new_prefix_show, end='')
@@ -245,43 +280,9 @@ while True:
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
-    if ord(ch) == 27:
-        esc_time = time.time()
-        esc_flag = 1
+    result, esc_flag, esc_time, is_left_right_key = handle_arrow_key(ch, esc_flag, esc_time, is_left_right_key)
+    if result:
         continue
-    elif esc_flag == 1:
-        if ch == '[' and (time.time() - esc_time) < 0.01:
-            esc_flag = 2
-            continue
-    elif esc_flag == 2:
-        if ch == 'A':
-            # UP key
-            if CMD_HISTORY_LINE_NO < XConst.MAX_NUM_CMD_HISTORY:
-                CMD_HISTORY_LINE_NO += 1
-                INPUT_CMD, CMD_HISTORY_LINE_NO = fetch_command(CMD_HISTORY_LINE_NO)
-                CUR_POS = len(INPUT_CMD)
-            left_right_key_flag = False
-        elif ch == 'B':
-            if CMD_HISTORY_LINE_NO > 0:
-                CMD_HISTORY_LINE_NO -= 1
-                INPUT_CMD, CMD_HISTORY_LINE_NO = fetch_command(CMD_HISTORY_LINE_NO)
-                CUR_POS = len(INPUT_CMD)
-            left_right_key_flag = False
-        elif ch == 'D':
-            # LEFT key
-            if CUR_POS > 0:
-                CUR_POS -= 1
-            left_right_key_flag = True
-        elif ch == 'C':
-            # RIGHT key
-            if CUR_POS < len(INPUT_CMD):
-                CUR_POS += 1
-            left_right_key_flag = True
-        esc_flag = 0
-        continue
-
-    left_right_key_flag = False
-    esc_flag = 0
     CMD_HISTORY_LINE_NO = 0
 
     if ord(ch) == 0x3:

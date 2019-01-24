@@ -18,6 +18,7 @@ from xhistory import store_command, fetch_command
 from xprint import xprint_new_line, xprint_head
 from xcommon import get_max_same_string
 from xdefine import XPrintStyle
+from xrun import xrun_action
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -31,6 +32,7 @@ ACTION_LIST = {
         xssh_action,
         xcd_action,
         xexit_action,
+        xrun_action,
     ]
 }
 
@@ -165,6 +167,7 @@ def run_command(command):
         return
 
     sub_cmds.append('')
+    xlogger.debug('enter command : {}'.format(sub_cmds))
     get_sub_command_list(sub_cmds, XKey.ENTER)
     store_command(command)
     CMD_HISTORY_LINE_NO = 0
@@ -283,6 +286,7 @@ while True:
     result, esc_flag, esc_time, is_left_right_key = handle_arrow_key(ch, esc_flag, esc_time, is_left_right_key)
     if result:
         continue
+    is_left_right_key = False
     CMD_HISTORY_LINE_NO = 0
 
     if ord(ch) == 0x3:

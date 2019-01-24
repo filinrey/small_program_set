@@ -240,7 +240,7 @@ def handle_arrow_key(key, esc_flag, esc_time, is_left_right_key):
 xlogger.info('='*32)
 xlogger.info('run {}'.format(XConst.PYFILE_NAME))
 if len(sys.argv) >= 2 and sys.argv[1] == 'install':
-    link_name = '/usr/bin/' + PYFILE_NAME
+    link_name = '/usr/bin/' + XConst.PYFILE_NAME
     system_command = 'sudo rm -f ' + link_name
     os.system(system_command)
     system_command = 'sudo ln -s ' + os.path.realpath(__file__) + ' ' + link_name

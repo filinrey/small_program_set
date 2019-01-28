@@ -89,15 +89,16 @@ xtest2_string=" \
 # dict description
 # declare -A dict
 # dict+=([key]=value)
-# key => ["1" - ]: root key, such as "xssh_action"
-# key => ["rootkeyname_name", ...]: second step key, rootkeyname is such as "xssh_action"
+# key => ["1" - ]: root key, such as "ssh"
+# key => ["x_1", ...]: second step key
 # take xssh_action for example, dicts are :
-# ["1"]="xssh_action"    ["xssh_action_name"]="ssh"    ["xssh_action_active"]="True"
-# ["xssh_action_sub_cmds_name_1"]="login" ["xssh_action_sub_cmds_action_1"]="action_login"
-# ["xssh_action_sub_cmds_name_2"]="remove" ["xssh_action_sub_cmds_action_2"]="action_remove"
+# ["1"]="ssh"    ["_name_1"]="ssh"    ["_ssh_active"]="True"
+# ["_sub_cmds_ssh_name_1"]="login" ["_sub_cmds_ssh_login_action"]="action_login"
+# ["_sub_cmds_ssh_name_2"]="remove" ["_sub_cmds_ssh_remove_action"]="action_remove"
 
 declare -A dicts
 dicts_root_key=1
+max_cmds_per_level=1
 
 function get_whole_prefix()
 {
@@ -136,20 +137,20 @@ function xdict_parse()
     name_num_list[$name_index]=0
     while [ 1 ]
     do
-        echo "content = $content"
+        #echo "content = $content"
         if [[ -z "$content" ]]; then
             break
         fi
         if [[ "$content" =~ ^\{.+ ]]; then
-            echo -e "\nsegmant item"
+            #echo -e "\nsegmant item"
             content=`echo $content | sed -r "s/^\{(.+)/\1/"`
             let prefix_index=prefix_index+1
         elif [[ "$content" =~ ^[,]*\}.* ]]; then
-            echo -e "\nsegmant end item"
+            #echo -e "\nsegmant end item"
             content=`echo $content | sed -r "s/^[,]*\}[,]*(.*)/\1/"`
             let prefix_index=prefix_index-1
         elif [[ "$content" =~ ^\"[a-zA-Z_0-9]+\":\"[a-zA-Z_0-9]+\"[,]*.*$ ]]; then
-            echo -e "\nnormal item"
+            #echo -e "\nnormal item"
         	item=`echo $content | sed -r "s/(\"[a-zA-Z_0-9]+\":\"[a-zA-Z_0-9]+\")[,]*.*/\1/"`
             content=`echo $content | sed -r "s/\"[a-zA-Z_0-9]+\":\"[a-zA-Z_0-9]+\"[,]*(.*)/\1/"`
             first=`echo $item | sed -r "s/\"([a-zA-Z_0-9]+)\".+/\1/"`
@@ -159,14 +160,17 @@ function xdict_parse()
                 cur_num=${name_num_list[$name_index]}
                 let cur_num=cur_num+1
                 name_num_list[$name_index]=$cur_num
+                if [[ $cur_num -gt $max_cmds_per_level ]]; then
+                    let max_cmds_per_level=cur_num
+                fi
                 key_name=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_"$first"_${name_num_list[$name_index]}"
             else
                 key_name=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_${name_list[$name_index]}_$first"
             fi
-            echo "[ $key_name ] = $second"
+            #echo "[ $key_name ] = $second"
             dicts+=(["$key_name"]="$second")
         elif [[ "$content" =~ ^\"[a-zA-Z_0-9]+\":\[.+\][,]*.*$ ]]; then
-            echo -e "\narray item"
+            #echo -e "\narray item"
             item=`echo $content | sed -r "s/(\"[a-zA-Z_0-9]+\":\[.+\])[,]*.*/\1/"`
             first=`echo $item | sed -r "s/\"([a-zA-Z_0-9]+)\".+/\1/"`
             prefix_list[$prefix_index]="$first"
@@ -176,7 +180,7 @@ function xdict_parse()
             name_num_list[$name_index]=0
             content=`echo $content | sed -r "s/\"[a-zA-Z_0-9]+\":\[(.+)/\1/"`
         elif [[ "$content" =~ ^[,]*\].* ]]; then
-            echo -e "\narray end item"
+            #echo -e "\narray end item"
             let prefix_index=prefix_index-1
             let name_index=name_index-1
             content=`echo $content | sed -r "s/^[,]*\][,]*(.*)/\1/"`
@@ -184,11 +188,47 @@ function xdict_parse()
             echo -e "\nunknown item"
             break
         fi
-        echo "item = $item"
+        #echo "item = $item"
     done
 }
 
-#xdict_parse "$xssh_string"
+function xdict_get_value()
+{
+    key=$1
+    echo "${dicts["$key"]}"
+}
+
+function xdict_print()
+{
+    root_name=$1
+    space="    "
+   
+    echo "dict = {"
+    line="$space\"name\":\"$root_name\","
+    #echo "$line"
+
+    expect_keys=("name" "active" "action" "sub_cmds")
+    name_list=()
+    name_index=0
+    while [ 1 ]
+    do
+        for expect in ${expect_keys[@]}; do
+            if [[ "$expect" == "name" ]]; then
+                for i in $(seq 1 $max_cmds_per_level); do
+                    key_name=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_"$first"_${name_num_list[$name_index]}"
+                done
+            fi
+            for key in $(echo ${!dicts[*]}); do
+                if [[ "$key" =~ ^[0-9]+$ ]]; then
+                    break
+                fi
+            done
+        done
+    done
+    echo "}"
+}
+
+xdict_parse "$xssh_string"
 #echo ""
 #xdict_parse "$xcd_string"
 #echo ""
@@ -196,7 +236,7 @@ function xdict_parse()
 #echo ""
 #xdict_parse "$xtest_string"
 #echo ""
-xdict_parse "$xtest2_string"
+#xdict_parse "$xtest2_string"
 echo ""
 
 for key in $(seq 1 $((dicts_root_key-1))); do
@@ -208,3 +248,6 @@ for key in $(echo ${!dicts[*]}); do
         echo "{ $key, ${dicts["$key"]} }"
     fi
 done
+
+echo -e "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+xdict_print "ssh"

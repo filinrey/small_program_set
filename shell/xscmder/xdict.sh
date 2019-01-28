@@ -66,6 +66,10 @@ xtest2_string=" \
                         \"name\": \"remove\", \
                         \"action\": \"action_remove\", \
                     }, \
+                    { \
+                        \"name\": \"detect\", \
+                        \"action\": \"action_detect\", \
+                    }, \
                 ], \
                 \"active\":\"true\", \
             }, \
@@ -95,52 +99,92 @@ xtest2_string=" \
 declare -A dicts
 dicts_root_key=1
 
+function get_whole_prefix()
+{
+    list=($1)
+    index=$2
+
+    whole_prefix=""
+    for i in $(seq 1 $index)
+    do
+        whole_prefix=$whole_prefix"_"${list[$((i-1))]}
+    done
+    echo $whole_prefix
+}
+
 function xdict_parse()
 {
     dict=`echo "$1" | sed "s/[ ]\+//g"`
     echo "dict = $dict"
-    if [[ "$dict" =~ ^[a-zA-Z_]+=\{[\":,_a-zA-Z\{\}\[]+[\]]*.*\}$ ]]; then
-        echo "good"
-    else
-        echo "bad"
+    if [[ ! "$dict" =~ ^[a-zA-Z_0-9]+=\{\"name\":\"[a-zA-Z_0-9]+\"[\":,_a-zA-Z0-9\{\}\[]+[\]]*.*\}$ ]]; then
+        echo "is not dict string"
+        return 1
     fi
-    dict_root_name=`echo $dict | sed -r "s/(.+)=\{.+/\1/"`
+    dict_root_name=`echo $dict | sed -r "s/^[a-zA-Z_0-9]+=\{\"name\":\"([a-zA-Z_0-9]+)\".+/\1/"`
     dicts+=(["$dicts_root_key"]="$dict_root_name")
     let dicts_root_key=dicts_root_key+1
 
     content=`echo ${dict#*${dict_root_name}=}`
-    content=`echo $dict | sed -r "s/.+=\{(.+)\}$/\1/"`
+    content=`echo $dict | sed -r "s/.+=(.+)$/\1/"`
 
-    count=1
     prefix=$dict_root_name
+    prefix_list=()
+    prefix_index=-1
+    name_list=()
+    name_num_list=()
+    name_index=0
+    name_num_list[$name_index]=0
     while [ 1 ]
     do
         echo "content = $content"
         if [[ -z "$content" ]]; then
             break
         fi
-        if [[ "$content" =~ ^\"[a-zA-Z_]+\":\"[a-zA-Z_]+\"[,]*.*$ ]]; then
-            echo "normal item"
-        	item=`echo $content | sed -r "s/(\"[a-zA-Z_]+\":\"[a-zA-Z_]+\")[,]*.*/\1/"`
-            content=`echo $content | sed -r "s/\"[a-zA-Z_]+\":\"[a-zA-Z_]+\"[,]*(.*)/\1/"`
-            first=`echo $item | sed -r "s/\"([a-zA-Z_]+)\".+/\1/"`
-            second=`echo $item | sed -r "s/\"[a-zA-Z_]+\":\"([a-zA-Z_]+)\"/\1/"`
-            key_name=$prefix"_"$first
+        if [[ "$content" =~ ^\{.+ ]]; then
+            echo -e "\nsegmant item"
+            content=`echo $content | sed -r "s/^\{(.+)/\1/"`
+            let prefix_index=prefix_index+1
+        elif [[ "$content" =~ ^[,]*\}.* ]]; then
+            echo -e "\nsegmant end item"
+            content=`echo $content | sed -r "s/^[,]*\}[,]*(.*)/\1/"`
+            let prefix_index=prefix_index-1
+        elif [[ "$content" =~ ^\"[a-zA-Z_0-9]+\":\"[a-zA-Z_0-9]+\"[,]*.*$ ]]; then
+            echo -e "\nnormal item"
+        	item=`echo $content | sed -r "s/(\"[a-zA-Z_0-9]+\":\"[a-zA-Z_0-9]+\")[,]*.*/\1/"`
+            content=`echo $content | sed -r "s/\"[a-zA-Z_0-9]+\":\"[a-zA-Z_0-9]+\"[,]*(.*)/\1/"`
+            first=`echo $item | sed -r "s/\"([a-zA-Z_0-9]+)\".+/\1/"`
+            second=`echo $item | sed -r "s/\"[a-zA-Z_0-9]+\":\"([a-zA-Z_0-9]+)\"/\1/"`
+            if [[ "$first" == "name" ]]; then
+                name_list[$name_index]="$second"
+                cur_num=${name_num_list[$name_index]}
+                let cur_num=cur_num+1
+                name_num_list[$name_index]=$cur_num
+                key_name=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_"$first"_${name_num_list[$name_index]}"
+            else
+                key_name=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_${name_list[$name_index]}_$first"
+            fi
             echo "[ $key_name ] = $second"
-        elif [[ "$content" =~ ^\"[a-zA-Z_]+\":\[.+\][,]*.*$ ]]; then
-            echo "array item"
-            item=`echo $content | sed -r "s/(\"[a-zA-Z_]+\":\[.+\])[,]*.*/\1/"`
-            content=`echo $content | sed -r "s/\"[a-zA-Z_]+\":\[.+\][,]*(.*)/\1/"`
-        fi
-        if [[ -z "$item" ]]; then
+            dicts+=(["$key_name"]="$second")
+        elif [[ "$content" =~ ^\"[a-zA-Z_0-9]+\":\[.+\][,]*.*$ ]]; then
+            echo -e "\narray item"
+            item=`echo $content | sed -r "s/(\"[a-zA-Z_0-9]+\":\[.+\])[,]*.*/\1/"`
+            first=`echo $item | sed -r "s/\"([a-zA-Z_0-9]+)\".+/\1/"`
+            prefix_list[$prefix_index]="$first"
+            let prefix_index=prefix_index+1
+            prefix_list[$prefix_index]="${name_list[$name_index]}"
+            let name_index=name_index+1
+            name_num_list[$name_index]=0
+            content=`echo $content | sed -r "s/\"[a-zA-Z_0-9]+\":\[(.+)/\1/"`
+        elif [[ "$content" =~ ^[,]*\].* ]]; then
+            echo -e "\narray end item"
+            let prefix_index=prefix_index-1
+            let name_index=name_index-1
+            content=`echo $content | sed -r "s/^[,]*\][,]*(.*)/\1/"`
+        else
+            echo -e "\nunknown item"
             break
         fi
         echo "item = $item"
-        let count=count+1
-        if [[ $count -gt 10 ]]; then
-            echo "xdict_parse error"
-            break
-        fi
     done
 }
 
@@ -150,11 +194,17 @@ function xdict_parse()
 #echo ""
 #xdict_parse "$xrun_string"
 #echo ""
-xdict_parse "$xtest_string"
-echo ""
+#xdict_parse "$xtest_string"
+#echo ""
 xdict_parse "$xtest2_string"
 echo ""
 
 for key in $(seq 1 $((dicts_root_key-1))); do
-    echo "${dicts["$key"]}"
+    echo "root : { $key, ${dicts["$key"]} }"
+done
+echo "------------------------------------------------------------------------------"
+for key in $(echo ${!dicts[*]}); do
+    if [[ ! "$key" =~ ^[0-9]+$ ]]; then
+        echo "{ $key, ${dicts["$key"]} }"
+    fi
 done

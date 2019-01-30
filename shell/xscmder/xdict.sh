@@ -396,20 +396,31 @@ function xdict_parse_from_file()
 
 function xdict_get_sub_cmd_list()
 {
-    parent_cmd=$1
+    parent_cmd="$1"
+
+    if [[ -z "$parent_cmd" ]]; then
+        for key in $(seq 1 $((dicts_root_key-1))); do
+             echo -n "${dicts["$key"]} "
+        done
+        return
+    fi
+    for i in $(seq 1 $max_cmds_per_level); do
+        key="_${parent_cmd}_sub_cmds_name_$i"
+        key_value=${dicts["$key"]}
+        if [[ -z "$key_value" ]]; then
+            break
+        fi
+        echo -n "$key_value "
+	done
 }
 
 xdict_parse_from_file "xdict.def"
 echo -e "\ntotal parse $? xdict from xdict.def\n"
 
 #xdict_parse "$xssh_string"
-#echo ""
 #xdict_parse "$xcd_string"
-#echo ""
 #xdict_parse "$xrun_string"
-#echo ""
 #xdict_parse "$xtest_string"
-#echo ""
 #xdict_parse "$xtest2_string"
 echo ""
 
@@ -427,3 +438,9 @@ echo -e "\n+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 xdict_print "ssh"
 xdict_print "cd"
 xdict_print "run"
+
+sub_cmds=(`xdict_get_sub_cmd_list ""`)
+echo "sub_cmds = ${sub_cmds[@]}"
+echo "${sub_cmds[0]}"
+sub_cmds_1=(`xdict_get_sub_cmd_list "${sub_cmds[0]}"`)
+echo "sub_cmds_1 = ${sub_cmds_1[@]}"

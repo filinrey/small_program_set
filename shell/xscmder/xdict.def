@@ -1,6 +1,3 @@
-#!/usr/bin/bash
-
-:<<COMMENT
 xssh_action = {
     'name': 'ssh',
     'sub_cmds': [
@@ -18,4 +15,26 @@ xssh_action = {
         },
     ],
 }
-COMMENT
+
+ilegal_action = 
+
+
+xrun_action = 
+    
+{
+    'name': 'run',
+    'action': action_run,
+}
+
+# active is optional, [no active item] = [active is True]
+xcd_action = {
+
+    'name': 'cd',
+    'active': False,
+    'sub_cmds': [
+        {
+            'name': 'install',
+            'action': action_install,
+        }
+    ]
+}

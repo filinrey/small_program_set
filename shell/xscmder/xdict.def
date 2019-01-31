@@ -16,19 +16,13 @@ xssh_action = {
     ],
 }
 
-ilegal_action = 
-
-
-xrun_action = 
-    
-{
+xrun_action = {
     'name': 'run',
     'action': action_run,
 }
 
 # active is optional, [no active item] = [active is True]
 xcd_action = {
-
     'name': 'cd',
     'active': False,
     'sub_cmds': [
@@ -37,4 +31,38 @@ xcd_action = {
             'action': action_install,
         }
     ]
+}
+
+xexit_action = {
+    'name': 'exit',
+    'action': action_xexit,
+}
+
+xtest_action = {
+    'name': 'test',
+    'sub_cmds': [
+        {
+            'name': 'first',
+            'sub_cmds': [
+                {
+                    'name': 'second',
+                    'action': second_action,
+                },
+                {
+                    'name': 'third',
+                    'action': third_action,
+                },
+            ],
+
+        },
+        {
+            'name': 'sprint',
+            'sub_cmds': [
+                {
+                    'name': 'summer',
+                    'action': summer_action,
+                },
+            ],
+        },
+    ],
 }

@@ -1,9 +1,12 @@
 #!/usr/bin/bash
 
+echo -ne "initial command system : "
+initial_start_time=`date +%s`
+
 source xcommon.sh
 source xdict.sh
 
-file_name="xscmder.sh"
+main_file_name="xscmder.sh"
 
 is_backspace_key=0
 is_left_right_key=0
@@ -19,6 +22,7 @@ stty -echo
 function xexit()
 {
     stty $origin_stty_config
+    echo ""
     exit
 }
 
@@ -36,8 +40,45 @@ function handle_enter_key()
 
 function handle_tab_key()
 {
-    cmds=(${input_cmd})
-    xlogger_debug $file_name $LINENO "cmds = ${cmds[@]}"
+    local cmds=(${input_cmd})
+    local cmds_num=${#cmds[@]}
+    local used_cmds_num=$cmds_num
+    if [[ $cmds_num == 0 ]]; then
+        cmds[$cmds_num]=""
+        let cmds_num=cmds_num+1
+    elif [[ "$input_cmd" =~ ^.+\ $ ]]; then
+        cmds[$cmds_num]=""
+        let cmds_num=cmds_num+1
+    else
+        if [[ $used_cmds_num -gt 0 ]]; then
+            let used_cmds_num=used_cmds_num-1
+        fi
+    fi
+    xlogger_debug $main_file_name $LINENO "cmds_num = $cmds_num, cmds = ${cmds[@]}"
+    local cmd_list=(`xdict_get_cmd_list "${cmds[@]:0:$used_cmds_num}"`)
+    xlogger_debug $main_file_name $LINENO "get_cmd_list = ${cmd_list[@]}"
+    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-1))]} from ${cmd_list[@]}"
+    local new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-1))]}" "${cmd_list[*]}"`
+
+    echo -ne "\n"
+    local item
+    for item in ${cmd_list[@]}
+    do
+        if [[ "$item" =~ ^${new_sub_cmd}.*$ ]]; then
+            echo -e "\t$item"
+        fi
+    done
+
+    local new_input_cmd=""
+    local i
+    for(( i=0;i<$((cmds_num-1));i++ ))
+    do
+        new_input_cmd=$new_input_cmd${cmds[$i]}" "
+    done
+    xlogger_debug $main_file_name $LINENO "new_input_cmd = ${new_input_cmd}, new_sub_cmd = $new_sub_cmd"
+    input_cmd=$new_input_cmd$new_sub_cmd
+    xlogger_debug $main_file_name $LINENO "new_input_cmd = ${input_cmd}"
+    cur_pos=${#input_cmd}
 }
 
 function handle_backspace_key()
@@ -62,7 +103,7 @@ function handle_arrow_key()
     elif [[ '[' == $key && 1 == $flag ]]; then
         let is_left_right_key=0
         cur_time=`date +%s`
-        xlogger_debug "$file_name" $LINENO "esc_time=$esc_time, cur_time=$cur_time, diff=$((cur_time-esc_time))"
+        xlogger_debug "$main_file_name" $LINENO "esc_time=$esc_time, cur_time=$cur_time, diff=$((cur_time-esc_time))"
         if [[ $((cur_time-esc_time)) -gt 1 ]]; then
             let is_arrow_key=0
             return 0
@@ -70,7 +111,7 @@ function handle_arrow_key()
         return 2
     elif [[ 2 == $flag ]]; then
         cur_time=`date +%s`
-        xlogger_debug "$file_name" $LINENO "esc_time=$esc_time, cur_time=$cur_time, diff=$((cur_time-esc_time))"
+        xlogger_debug "$main_file_name" $LINENO "esc_time=$esc_time, cur_time=$cur_time, diff=$((cur_time-esc_time))"
         if [[ $((cur_time-esc_time)) -gt 1 ]]; then
             let is_arrow_key=0
             let is_left_right_key=0
@@ -116,6 +157,8 @@ trap "xexit;" INT QUIT
 esc_flag=0
 c=' '
 prefix_show=""
+initial_end_time=`date +%s`
+echo -ne "$((initial_end_time-initial_start_time)) second\n"
 while [ 1 ]
 do
     if [[ $is_left_right_key == 0 ]]; then

@@ -2,6 +2,8 @@
 
 source xlogger.sh
 
+xdict_file_name="xdict.sh"
+
 :<<'COMMENT'
 xssh_string=" \
     xssh_action = { \
@@ -211,7 +213,7 @@ function get_indent()
 function xdict_print()
 {
     root_name=$1
-    root_key=1
+    root_key=0
     indent=0
    
     echo "dict = "
@@ -221,6 +223,9 @@ function xdict_print()
             break
         fi
     done
+    if [[ $root_key == 0 ]]; then
+        return
+    fi
 
     expect_keys=("name" "active" "action" "sub_cmds")
     expect_index=0
@@ -409,8 +414,9 @@ function xdict_get_sub_cmd_list()
         return
     fi
     for i in $(seq 1 $max_cmds_per_level); do
-        key="_${parent_cmd}_sub_cmds_name_$i"
-        key_value=${dicts["$key"]}
+        local key="${parent_cmd}_name_$i"
+        local key_value=${dicts["$key"]}
+        xlogger_debug $xdict_file_name $LINENO "find $key : $key_value"
         if [[ -z "$key_value" ]]; then
             break
         fi
@@ -418,15 +424,28 @@ function xdict_get_sub_cmd_list()
 	done
 }
 
-function xidct_get_cmd_list()
+function xdict_get_cmd_list()
 {
-    local key=$1
-    local cmds=$2
-    local cmds_num=${#cmds[@]}
+    local xdict_cmds=($1)
+    local xdict_cmds_num=${#xdict_cmds[@]}
+    local xdict_sub_cmd=""
+    local xdict_cmd=""
+    local xdict_cmd_list=""
 
-    if [[ $cmds_num == 1 ]]; then
-        echo ""
+    if [[ $xdict_cmds_num == 0 ]]; then
+        xdict_cmd_list=`xdict_get_sub_cmd_list ""`
+        xlogger_debug $xdict_file_name $LINENO "cmd_list = $xdict_cmd_list"
+        echo "$xdict_cmd_list"
+        return 0
     fi
+    for xdict_sub_cmd in ${xdict_cmds[@]}
+    do
+        xdict_cmd="${xdict_cmd}_${xdict_sub_cmd}_sub_cmds"
+    done
+    xlogger_debug $xdict_file_name $LINENO "cmd prefix = $xdict_cmd"
+    xdict_cmd_list=`xdict_get_sub_cmd_list "$xdict_cmd"`
+    xlogger_debug $xdict_file_name $LINENO "cmd_list = $xdict_cmd_list"
+    echo "$xdict_cmd_list"
 }
 
 xdict_parse_from_file "xdict.def"
@@ -453,7 +472,7 @@ done
 echo -e "\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 xdict_print "ssh"
 xdict_print "cd"
-xdict_print "run"
+xdict_print "test"
 
 sub_cmds=(`xdict_get_sub_cmd_list ""`)
 echo "sub_cmds = ${sub_cmds[@]}"

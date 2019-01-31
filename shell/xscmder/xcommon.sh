@@ -1,81 +1,54 @@
 #!/usr/bin/bash
 
-x_cur_dir=$(cd $(dirname $0); pwd)
+source xlogger.sh
 
-x_cur_file=`echo "$(basename $0)" | awk -F '.' '{print $1}'`
-x_prefix_name="$x_cur_file# "
+xcommon_file_name="xcommon.sh"
 
-x_data_dir="$x_cur_dir/data"
-if [[ ! -d $x_data_dir ]]; then
-    `mkdir -p $x_data_dir`
-fi
-
-x_log_file="$x_data_dir/$x_cur_file.log"
-x_login_history="$x_data_dir/login_history"
-x_cmd_history="$x_data_dir/cmd_history"
-
-declare -A xlogger_log_list
-xlogger_expect=()
-xlogger_expect_index=0
-
-function xlogger_fill_log_list()
+function get_max_same_string()
 {
-    local expect_num=${#xlogger_expect[@]}
-    local input_num=$#
-    local key=""
-    local key_value=""
-    local BACK_IFS=$IFS
-    IFS=""
-    for i in $@; do
-        if [[ $xlogger_expect_index -eq $expect_num ]]; then
-            key_value=$key_value" "$i
-        else
-            key=${xlogger_expect[$xlogger_expect_index]}
-            key_value=$i
-            let xlogger_expect_index=xlogger_expect_index+1
+    local pattern=$1
+    local list=($2)
+    xlogger_debug $xcommon_file_name $LINENO "pattern = $pattern, list = ${list[@]}"
+
+    if [[ -z "$pattern" ]]; then
+        #echo "$pattern"
+        xlogger_debug $xcommon_file_name $LINENO "pattern is empty"
+        #return -1
+    fi
+
+    local match_list=()
+    local match_num=0
+    local item
+    for item in ${list[@]}
+    do
+        if [[ "$item" =~ ^${pattern}.*$ ]]; then
+            match_list[$match_num]="$item"
+            let match_num=match_num+1
         fi
-        echo "$key : $key_value"
-        xlogger_log_list+=(["$key"]="$key_value")
     done
-    IFS=$BACK_IFS
-    for i in $(seq $xlogger_expect_index $((${#xlogger_expect[@]}-1))); do
-        xlogger_log_list+=([${xlogger_expect[$xlogger_expect_index]}]="")
+    if [[ $match_num == 0 ]]; then
+        echo "$pattern"
+        xlogger_debug $xcommon_file_name $LINENO "no match for $pattern"
+        return -1
+    fi
+
+    local first_match_string_length=${#match_list[0]}
+    #echo "first_match_string_length = $first_match_string_length"
+    local index=${#pattern}
+    local i
+    local max_same_string="$pattern"
+    for i in $(seq $index $((first_match_string_length-1)))
+    do
+        local temp=$max_same_string${match_list:$i:1}
+        for item in ${match_list[@]:1}
+        do
+            xlogger_debug $xcommon_file_name $LINENO "compare $temp with $item"
+            if [[ ! "$item" =~ ^${temp}.*$ ]]; then
+                break 2
+            fi
+        done
+        max_same_string=$max_same_string${match_list:$i:1}
     done
+    echo "$max_same_string"
+    return 0
 }
-
-function xlogger()
-{
-    xlogger_expect=("DATE" "LEVEL" "FILE" "LINE" "INFO")
-    cur_date=`date +%Y-%m-%d\ %H:%M:%S,%N`
-    xlogger_log_list+=([${xlogger_expect[0]}]="$cur_date")
-    xlogger_expect_index=1
-    local BACK_IFS=$IFS
-    IFS=""
-    xlogger_fill_log_list $@
-    IFS=$BACK_IFS
-
-    let xlogger_expect_index=0
-    local log_info="${xlogger_log_list[${xlogger_expect[$xlogger_expect_index]}]} "
-    let xlogger_expect_index=xlogger_expect_index+1
-    log_info="$log_info[${xlogger_log_list[${xlogger_expect[$xlogger_expect_index]}]}] "
-    let xlogger_expect_index=xlogger_expect_index+1
-    log_info="$log_info${xlogger_log_list[${xlogger_expect[$xlogger_expect_index]}]}:"
-    let xlogger_expect_index=xlogger_expect_index+1
-    log_info="$log_info${xlogger_log_list[${xlogger_expect[$xlogger_expect_index]}]} "
-    let xlogger_expect_index=xlogger_expect_index+1
-    log_info="$log_info${xlogger_log_list[${xlogger_expect[$xlogger_expect_index]}]}"
-    echo "$log_info" >> $x_log_file
-}
-
-function xlogger_debug()
-{
-    xlogger_expect=("FILE" "LINE" "INFO")
-    xlogger_expect_index=0
-    local BACK_IFS=$IFS
-    IFS=""
-    xlogger_fill_log_list $@
-    IFS=$BACK_IFS
-    xlogger "DEBUG" "${xlogger_log_list[${xlogger_expect[0]}]}" "${xlogger_log_list[${xlogger_expect[1]}]}" "${xlogger_log_list[${xlogger_expect[2]}]}"
-}
-
-#xlogger_debug "test.sh" 11 "debug info"

@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-source xcommon.sh
+source xglobal.sh
 
 declare -A xlogger_log_list
 xlogger_expect=()
@@ -22,7 +22,7 @@ function xlogger_fill_log_list()
             key_value=$i
             let xlogger_expect_index=xlogger_expect_index+1
         fi
-        echo "$key : $key_value"
+        #echo "$key : $key_value"
         xlogger_log_list+=(["$key"]="$key_value")
     done
     IFS=$BACK_IFS

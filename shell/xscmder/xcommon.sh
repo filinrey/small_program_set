@@ -11,9 +11,7 @@ function get_max_same_string()
     xlogger_debug $xcommon_file_name $LINENO "pattern = $pattern, list = ${list[@]}"
 
     if [[ -z "$pattern" ]]; then
-        #echo "$pattern"
         xlogger_debug $xcommon_file_name $LINENO "pattern is empty"
-        #return -1
     fi
 
     local match_list=()
@@ -29,11 +27,10 @@ function get_max_same_string()
     if [[ $match_num == 0 ]]; then
         echo "$pattern"
         xlogger_debug $xcommon_file_name $LINENO "no match for $pattern"
-        return -1
+        return 0
     fi
 
     local first_match_string_length=${#match_list[0]}
-    #echo "first_match_string_length = $first_match_string_length"
     local index=${#pattern}
     local i
     local max_same_string="$pattern"
@@ -50,5 +47,6 @@ function get_max_same_string()
         max_same_string=$max_same_string${match_list:$i:1}
     done
     echo "$max_same_string"
-    return 0
+    xlogger_debug $xcommon_file_name $LINENO "max_same_string is $max_same_string, return ${#max_same_string}"
+    return ${#max_same_string}
 }

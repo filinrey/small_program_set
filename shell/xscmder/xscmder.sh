@@ -47,7 +47,34 @@ function handle_enter_key()
         $cmd_action $x_key_enter
         input_cmd=""
         let cur_pos=0
+    else
+        echo ""
     fi
+}
+
+function handle_space_key()
+{
+    local new_input_cmd="$1"
+    if [[ ${#new_input_cmd} == 0 ]]; then
+        return -1
+    fi
+    if [[ "$new_input_cmd" =~ ^.*\ \ $ ]]; then
+        return -1
+    fi
+
+    local new_sub_cmd result
+    local cmds=($new_input_cmd)
+    local cmds_num=${#cmds[@]}
+    local cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$((cmds_num-1))}"`)
+    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-1))]} from ${cmd_list[@]}"
+    new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-1))]}" "${cmd_list[*]}"`
+    result=$?
+    if [[ $result == 0 ]]; then
+        echo -e "\n\tno \"${cmds[$((cmds_num-1))]}\" command"
+        return -1
+    fi
+    input_cmd=$new_input_cmd
+    let cur_pos=cur_pos+1
 }
 
 function handle_tab_key()
@@ -68,7 +95,6 @@ function handle_tab_key()
     fi
     xlogger_debug $main_file_name $LINENO "cmds_num = $cmds_num, cmds = ${cmds[@]}"
     local cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$used_cmds_num}"`)
-    xlogger_debug $main_file_name $LINENO "get_cmd_list = ${cmd_list[@]}"
     xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-1))]} from ${cmd_list[@]}"
     local new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-1))]}" "${cmd_list[*]}"`
 
@@ -214,8 +240,14 @@ do
         handle_backspace_key
         continue
     fi
-    if [[ "$c" =~ ^[a-zA-Z0-9_\ .]$ ]]; then
-        input_cmd="$input_cmd$c"
+    if [[ ' ' == $c ]]; then
+        new_input_cmd=${input_cmd:0:$cur_pos}"$c"${input_cmd:$cur_pos}
+        handle_space_key "$new_input_cmd"
+        continue
+    fi
+    if [[ "$c" =~ ^[a-zA-Z0-9_.]$ ]]; then
+        new_input_cmd=${input_cmd:0:$cur_pos}"$c"${input_cmd:$cur_pos}
+        input_cmd="$new_input_cmd"
         let cur_pos=cur_pos+1
     fi
 done

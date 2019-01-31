@@ -5,6 +5,7 @@ initial_start_time=`date +%s`
 
 source xcommon.sh
 source xdict.sh
+source xexit.sh
 
 main_file_name="xscmder.sh"
 
@@ -16,12 +17,11 @@ cur_pos=0
 input_cmd=""
 esc_time=0
 
-origin_stty_config=`stty -g`
 stty -echo
 
 function xexit()
 {
-    stty $origin_stty_config
+    stty $x_origin_stty_config
     echo ""
     exit
 }
@@ -35,7 +35,19 @@ function get_key()
 
 function handle_enter_key()
 {
-    echo "enter"
+    local cmds=(${input_cmd})
+    local cmds_num=${#cmds[@]}
+    if [[ $cmds_num == 0 ]]; then
+        echo ""
+        return
+    fi
+    local cmd_action=`xdict_get_action "${cmds[*]}"`
+    if [[ -n "$cmd_action" ]]; then
+        xlogger_debug $main_file_name $LINENO "run action : $cmd_action"
+        $cmd_action $x_key_enter
+        input_cmd=""
+        let cur_pos=0
+    fi
 }
 
 function handle_tab_key()
@@ -55,11 +67,19 @@ function handle_tab_key()
         fi
     fi
     xlogger_debug $main_file_name $LINENO "cmds_num = $cmds_num, cmds = ${cmds[@]}"
-    local cmd_list=(`xdict_get_cmd_list "${cmds[@]:0:$used_cmds_num}"`)
+    local cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$used_cmds_num}"`)
     xlogger_debug $main_file_name $LINENO "get_cmd_list = ${cmd_list[@]}"
     xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-1))]} from ${cmd_list[@]}"
     local new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-1))]}" "${cmd_list[*]}"`
 
+    if [[ ${#input_cmd} -gt 0 && ${#cmd_list[@]} -eq 0 ]]; then
+        local cmd_action=`xdict_get_action "${cmds[*]}"`
+        if [[ -n "$cmd_action" ]]; then
+            xlogger_debug $main_file_name $LINENO "run action : $cmd_action"
+            $cmd_action $x_key_tab
+            return
+        fi
+    fi
     echo -ne "\n"
     local item
     for item in ${cmd_list[@]}
@@ -171,11 +191,11 @@ do
         echo -ne "\r$new_prefix_show"
     fi
     c=`get_key`
- 
+
     if [[ '' == $c ]]; then
         xexit
     fi
-    
+
     handle_arrow_key $c $esc_flag
     let esc_flag=$?
     if [[ $is_arrow_key == 1 ]]; then

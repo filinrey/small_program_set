@@ -13,3 +13,9 @@ fi
 x_log_file="$x_data_dir/$x_cur_file.log"
 x_login_history="$x_data_dir/login_history"
 x_cmd_history="$x_data_dir/cmd_history"
+
+x_origin_stty_config=`stty -g`
+
+x_key_tab=1
+x_key_enter=2
+x_key_space=3

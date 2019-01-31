@@ -3,6 +3,7 @@ xssh_action = {
     'sub_cmds': [
         {
             'name': 'login',
+            'active': False,
             'action': action_login,
         },
         {
@@ -24,7 +25,7 @@ xrun_action = {
 # active is optional, [no active item] = [active is True]
 xcd_action = {
     'name': 'cd',
-    'active': False,
+    'active': True,
     'sub_cmds': [
         {
             'name': 'install',
@@ -40,6 +41,7 @@ xexit_action = {
 
 xtest_action = {
     'name': 'test',
+    'active': False,
     'sub_cmds': [
         {
             'name': 'first',

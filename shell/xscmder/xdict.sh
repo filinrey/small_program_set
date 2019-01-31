@@ -215,7 +215,7 @@ function xdict_print()
     root_name=$1
     root_key=0
     indent=0
-   
+
     echo "dict = "
     for key in $(seq 1 $((dicts_root_key-1))); do
         if [[ ${dicts["$key"]} == "$root_name" ]]; then
@@ -286,7 +286,7 @@ function xdict_print()
         if [[ -n "$active_value" ]]; then
             echo "`get_indent $indent`\"$expect_value\":\"$active_value\","
         fi
- 
+
         expect_value=${expect_keys[$expect_index]}
         let expect_index=3
         action_key=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_${name_value}_${expect_value}"
@@ -294,7 +294,7 @@ function xdict_print()
         if [[ -n "$action_value" ]]; then
             echo "`get_indent $indent`\"$expect_value\":\"$action_value\","
         fi
- 
+
         expect_value=${expect_keys[$expect_index]}
         let expect_index=3
         sub_cmds_key=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_${name_value}_${expect_value}_name_1"
@@ -409,18 +409,27 @@ function xdict_get_sub_cmd_list()
 
     if [[ -z "$parent_cmd" ]]; then
         for key in $(seq 1 $((dicts_root_key-1))); do
-             echo -n "${dicts["$key"]} "
+            local xdict_key_value=${dicts["$key"]}
+            local xdict_active=${dicts["_${xdict_key_value}_active"]}
+            xlogger_debug $xdict_file_name $LINENO "active[ $key ] = $xdict_active"
+            if [[ "$xdict_active" != "False" ]]; then
+                echo -n "${xdict_key_value} "
+            fi
         done
         return
     fi
     for i in $(seq 1 $max_cmds_per_level); do
         local key="${parent_cmd}_name_$i"
         local key_value=${dicts["$key"]}
+        local xdict_active=${dicts["${parent_cmd}_${key_value}_active"]}
         xlogger_debug $xdict_file_name $LINENO "find $key : $key_value"
+        xlogger_debug $xdict_file_name $LINENO "active[ $key_value ] = $xdict_active"
         if [[ -z "$key_value" ]]; then
             break
         fi
-        echo -n "$key_value "
+        if [[ "$xdict_active" != "False" ]]; then
+            echo -n "$key_value "
+        fi
 	done
 }
 
@@ -431,6 +440,7 @@ function xdict_get_cmd_list()
     local xdict_sub_cmd=""
     local xdict_cmd=""
     local xdict_cmd_list=""
+    xlogger_debug $xdict_file_name $LINENO "get cmd list base on : ${xdict_cmds[@]}"
 
     if [[ $xdict_cmds_num == 0 ]]; then
         xdict_cmd_list=`xdict_get_sub_cmd_list ""`
@@ -448,7 +458,39 @@ function xdict_get_cmd_list()
     echo "$xdict_cmd_list"
 }
 
+function xdict_get_action()
+{
+    local xdict_cmds=($1)
+    local xdict_cmds_num=${#xdict_cmds[@]}
+    local xdict_action_key=""
+    local xdict_action=""
+
+    if [[ $xdict_cmds_num -eq 0 ]]; then
+        echo ""
+        return -1
+    fi
+    for(( i=0;i<$((xdict_cmds_num-1));i++ ))
+    do
+        xdict_action_key="${xdict_action_key}_${xdict_cmds[$i]}_sub_cmds"
+    done
+    xdict_action_key="${xdict_action_key}_${xdict_cmds[$((xdict_cmds_num-1))]}_action"
+    xdict_action=${dicts["$xdict_action_key"]}
+    xlogger_debug $xdict_file_name $LINENO "action is $xdict_action_key : $xdict_action"
+    echo $xdict_action
+    return 0
+}
+
 xdict_parse_from_file "xdict.def"
+
+for key in $(seq 1 $((dicts_root_key-1))); do
+    xlogger_debug $xdict_file_name $LINENO "root : { $key, ${dicts["$key"]} }"
+done
+for key in $(echo ${!dicts[*]}); do
+    if [[ ! "$key" =~ ^[0-9]+$ ]]; then
+        xlogger_debug $xdict_file_name $LINENO "{ $key, ${dicts["$key"]} }"
+    fi
+done
+
 :<<'COMMENT'
 echo -e "\ntotal parse $? xdict from xdict.def\n"
 

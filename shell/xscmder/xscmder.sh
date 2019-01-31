@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
 source xcommon.sh
+source xdict.sh
 
 file_name="xscmder.sh"
 
@@ -35,12 +36,17 @@ function handle_enter_key()
 
 function handle_tab_key()
 {
-    echo "tab"
+    cmds=(${input_cmd})
+    xlogger_debug $file_name $LINENO "cmds = ${cmds[@]}"
 }
 
 function handle_backspace_key()
 {
-    echo "backspace"
+    if [[ $cur_pos -gt 0 ]]; then
+        new_input_cmd=${input_cmd:0:$((cur_pos-1))}${input_cmd:$cur_pos}
+        input_cmd=$new_input_cmd
+        let cur_pos=cur_pos-1
+    fi
 }
 
 function handle_arrow_key()
@@ -109,10 +115,11 @@ trap "xexit;" INT QUIT
 
 esc_flag=0
 c=' '
+prefix_show=""
 while [ 1 ]
 do
     if [[ $is_left_right_key == 0 ]]; then
-        clear_line ${#input_cmd}
+        clear_line ${#prefix_show}
         prefix_show="$x_prefix_name$input_cmd"
         echo -ne "\r$prefix_show"
     fi
@@ -122,7 +129,7 @@ do
     fi
     c=`get_key`
  
-    if [[ 'q' == $c || '' == $c ]]; then
+    if [[ '' == $c ]]; then
         xexit
     fi
     
@@ -134,14 +141,17 @@ do
 
     if [[ '' == $c ]]; then
         handle_enter_key
+        continue
     fi
     if [[ '	' == $c ]]; then
         handle_tab_key
+        continue
     fi
     if [[ '' == $c ]]; then
         handle_backspace_key
+        continue
     fi
-    if [[ "$c" =~ ^[a-zA-Z0-9_\ ]$ ]]; then
+    if [[ "$c" =~ ^[a-zA-Z0-9_\ .]$ ]]; then
         input_cmd="$input_cmd$c"
         let cur_pos=cur_pos+1
     fi

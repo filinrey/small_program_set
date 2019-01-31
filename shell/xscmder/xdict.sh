@@ -1,5 +1,8 @@
 #!/usr/bin/bash
 
+source xlogger.sh
+
+:<<'COMMENT'
 xssh_string=" \
     xssh_action = { \
         \"name\": \"ssh\", \
@@ -81,6 +84,7 @@ xtest2_string=" \
         \"active\": \"True\", \
     } \
 "
+COMMENT
 
 # after sed, dict will be :
 # xssh_action = { "name": "ssh", "active": "True", "sub_cmds": [ { "name": "login", "action": "action_login", }, { "name": "remove", "action": "action_remove", }, ] }
@@ -396,7 +400,7 @@ function xdict_parse_from_file()
 
 function xdict_get_sub_cmd_list()
 {
-    parent_cmd="$1"
+    local parent_cmd="$1"
 
     if [[ -z "$parent_cmd" ]]; then
         for key in $(seq 1 $((dicts_root_key-1))); do
@@ -414,7 +418,19 @@ function xdict_get_sub_cmd_list()
 	done
 }
 
+function xidct_get_cmd_list()
+{
+    local key=$1
+    local cmds=$2
+    local cmds_num=${#cmds[@]}
+
+    if [[ $cmds_num == 1 ]]; then
+        echo ""
+    fi
+}
+
 xdict_parse_from_file "xdict.def"
+:<<'COMMENT'
 echo -e "\ntotal parse $? xdict from xdict.def\n"
 
 #xdict_parse "$xssh_string"
@@ -444,3 +460,4 @@ echo "sub_cmds = ${sub_cmds[@]}"
 echo "${sub_cmds[0]}"
 sub_cmds_1=(`xdict_get_sub_cmd_list "${sub_cmds[0]}"`)
 echo "sub_cmds_1 = ${sub_cmds_1[@]}"
+COMMENT

@@ -440,22 +440,32 @@ function xdict_get_cmd_list()
     local xdict_sub_cmd=""
     local xdict_cmd=""
     local xdict_cmd_list=""
+    local xdict_prev_cmd_list=""
+    local xdict_sub_cmd_num=0
     xlogger_debug $xdict_file_name $LINENO "get cmd list base on : ${xdict_cmds[@]}"
 
-    if [[ $xdict_cmds_num == 0 ]]; then
-        xdict_cmd_list=`xdict_get_sub_cmd_list ""`
-        xlogger_debug $xdict_file_name $LINENO "cmd_list = $xdict_cmd_list"
-        echo "$xdict_cmd_list"
-        return 0
-    fi
+    xdict_cmd_list=`xdict_get_sub_cmd_list ""`
+    xlogger_debug $xdict_file_name $LINENO "cmd_list = $xdict_cmd_list"
+    xdict_prev_cmd_list="$xdict_cmd_list"
+    let xdict_sub_cmd_num=xdict_sub_cmd_num+1
+    #if [[ $xdict_cmds_num == 0 ]]; then
+    #    echo "$xdict_cmd_list"
+    #    return 1
+    #fi
     for xdict_sub_cmd in ${xdict_cmds[@]}
     do
         xdict_cmd="${xdict_cmd}_${xdict_sub_cmd}_sub_cmds"
+        xlogger_debug $xdict_file_name $LINENO "cmd prefix = $xdict_cmd"
+        xdict_cmd_list=`xdict_get_sub_cmd_list "$xdict_cmd"`
+        if [[ -z "$xdict_cmd_list" ]]; then
+            break
+        fi
+        xdict_prev_cmd_list="$xdict_cmd_list"
+        let xdict_sub_cmd_num=xdict_sub_cmd_num+1
     done
-    xlogger_debug $xdict_file_name $LINENO "cmd prefix = $xdict_cmd"
-    xdict_cmd_list=`xdict_get_sub_cmd_list "$xdict_cmd"`
-    xlogger_debug $xdict_file_name $LINENO "cmd_list = $xdict_cmd_list"
-    echo "$xdict_cmd_list"
+    xlogger_debug $xdict_file_name $LINENO "cmd_list = $xdict_prev_cmd_list, cmd_deep = $xdict_sub_cmd_num"
+    echo "$xdict_prev_cmd_list"
+    return $xdict_sub_cmd_num
 }
 
 function xdict_get_action()

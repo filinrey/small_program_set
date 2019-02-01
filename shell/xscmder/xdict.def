@@ -39,7 +39,12 @@ xexit_action = {
     'action': action_xexit,
 }
 
-xtest_action = {
+xinstall_action = {
+    'name': 'install',
+    'action': action_xinstall,
+}
+
+#xtest_action = {
     'name': 'test',
     'active': False,
     'sub_cmds': [

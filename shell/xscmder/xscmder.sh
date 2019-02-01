@@ -6,6 +6,7 @@ initial_start_time=`date +%s`
 source xcommon.sh
 source xdict.sh
 source xexit.sh
+source xinstall.sh
 
 main_file_name="xscmder.sh"
 
@@ -41,10 +42,13 @@ function handle_enter_key()
         echo ""
         return
     fi
-    local cmd_action=`xdict_get_action "${cmds[*]}"`
+    local cmd_list cmd_deep cmd_action
+    cmd_list=(`xdict_get_cmd_list "${cmds[*]}"`)
+    cmd_deep=$?
+    cmd_action=`xdict_get_action "${cmds[*]:0:$cmd_deep}"`
     if [[ -n "$cmd_action" ]]; then
         xlogger_debug $main_file_name $LINENO "run action : $cmd_action"
-        $cmd_action $x_key_enter
+        $cmd_action $x_key_enter "${cmds[*]:$cmd_deep}"
         input_cmd=""
         let cur_pos=0
     else
@@ -62,15 +66,20 @@ function handle_space_key()
         return -1
     fi
 
-    local new_sub_cmd result
+    local new_sub_cmd result cmd_list cmd_deep
     local cmds=($new_input_cmd)
     local cmds_num=${#cmds[@]}
-    local cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$((cmds_num-1))}"`)
-    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-1))]} from ${cmd_list[@]}"
-    new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-1))]}" "${cmd_list[*]}"`
+    cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$((cmds_num-1))}"`)
+    cmd_deep=$?
+    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmd_deep-1))]} from ${cmd_list[@]}"
+    new_sub_cmd=`get_max_same_string "${cmds[$((cmd_deep-1))]}" "${cmd_list[*]}"`
     result=$?
+    if [[ "$new_sub_cmd" != "${cmds[$((cmd_deep-1))]}" && "$new_input_cmd" =~ ^.*\ $ ]]; then
+        echo -e "\n\tno \"${cmds[$((cmd_deep-1))]}\" command"
+        return -1
+    fi
     if [[ $result == 0 ]]; then
-        echo -e "\n\tno \"${cmds[$((cmds_num-1))]}\" command"
+        echo -e "\n\tno \"${cmds[$((cmd_deep-1))]}\" command"
         return -1
     fi
     input_cmd=$new_input_cmd
@@ -93,16 +102,18 @@ function handle_tab_key()
             let used_cmds_num=used_cmds_num-1
         fi
     fi
+    local cmd_list cmd_deep
     xlogger_debug $main_file_name $LINENO "cmds_num = $cmds_num, cmds = ${cmds[@]}"
-    local cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$used_cmds_num}"`)
+    cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$used_cmds_num}"`)
+    cmd_deep=$?
     xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-1))]} from ${cmd_list[@]}"
     local new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-1))]}" "${cmd_list[*]}"`
 
-    if [[ ${#input_cmd} -gt 0 && ${#cmd_list[@]} -eq 0 ]]; then
-        local cmd_action=`xdict_get_action "${cmds[*]}"`
+    if [[ ${#input_cmd} -gt 0 && $cmds_num -gt $cmd_deep ]]; then
+        local cmd_action=`xdict_get_action "${cmds[*]:0:$cmd_deep}"`
         if [[ -n "$cmd_action" ]]; then
             xlogger_debug $main_file_name $LINENO "run action : $cmd_action"
-            $cmd_action $x_key_tab
+            $cmd_action $x_key_tab "${cmds[*]:$cmd_deep}"
             return
         fi
     fi
@@ -245,7 +256,7 @@ do
         handle_space_key "$new_input_cmd"
         continue
     fi
-    if [[ "$c" =~ ^[a-zA-Z0-9_.]$ ]]; then
+    if [[ "$c" =~ ^[a-zA-Z0-9_.\/]$ ]]; then
         new_input_cmd=${input_cmd:0:$cur_pos}"$c"${input_cmd:$cur_pos}
         input_cmd="$new_input_cmd"
         let cur_pos=cur_pos+1

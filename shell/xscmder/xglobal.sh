@@ -1,8 +1,9 @@
 #!/usr/bin/bash
 
-x_cur_dir=$(cd $(dirname $0); pwd)
-
-x_cur_file=`echo "$(basename $0)" | awk -F '.' '{print $1}'`
+x_cur_file_path="`readlink -f $0`"
+x_cur_dir=${x_cur_file_path%/*}
+x_cur_file_name=${x_cur_file_path##*/}
+x_cur_file=${x_cur_file_name%.*}
 x_prefix_name="$x_cur_file# "
 
 x_data_dir="$x_cur_dir/data"
@@ -13,6 +14,7 @@ fi
 x_log_file="$x_data_dir/$x_cur_file.log"
 x_login_history="$x_data_dir/login_history"
 x_cmd_history="$x_data_dir/cmd_history"
+x_cd_history="$x_data_dir/cd_history"
 
 x_origin_stty_config=`stty -g`
 

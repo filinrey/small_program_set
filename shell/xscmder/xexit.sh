@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-source xglobal.sh
+source $x_real_dir/xlogger.sh
 
 function show_exit_help()
 {
@@ -26,9 +26,7 @@ function action_xexit()
             echo -e "\t\"$xexit_cmd\" is not support"
             return
         fi
-        stty $x_origin_stty_config
-        echo ""
-        exit
+        let x_stop=1
     fi
 }
 

@@ -3,10 +3,24 @@
 echo -ne "initial command system : "
 initial_start_time=`date +%s`
 
-source xcommon.sh
-source xdict.sh
-source xexit.sh
-source xinstall.sh
+if [[ "$0" == "bash" ]]; then
+    which_output=`which xscmder 2>/dev/null`
+    if [[ -n "$which_output" ]]; then
+        x_real_file_path=`echo "$which_output" | sed -r "s/^alias.+=[\"\'. ]*(.+)[\"\']*$/\1/"`
+    else
+        return
+    fi
+else
+    x_real_file_path="`readlink -f $0`"
+fi
+x_real_dir=${x_real_file_path%/*}
+
+source $x_real_dir/xglobal.sh
+source $x_real_dir/xcommon.sh
+source $x_real_dir/xdict.sh
+source $x_real_dir/xexit.sh
+source $x_real_dir/xinstall.sh
+source $x_real_dir/xcd.sh
 
 main_file_name="xscmder.sh"
 
@@ -24,7 +38,8 @@ function xexit()
 {
     stty $x_origin_stty_config
     echo ""
-    exit
+    let x_stop=1
+    #exit
 }
 
 function get_key()
@@ -218,6 +233,10 @@ initial_end_time=`date +%s`
 echo -ne "$((initial_end_time-initial_start_time)) second\n"
 while [ 1 ]
 do
+    if [[ $x_stop == 1 ]]; then
+        xexit
+        break
+    fi
     if [[ $is_left_right_key == 0 ]]; then
         clear_line ${#prefix_show}
         prefix_show="$x_prefix_name$input_cmd"

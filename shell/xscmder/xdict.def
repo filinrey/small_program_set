@@ -26,12 +26,7 @@ xrun_action = {
 xcd_action = {
     'name': 'cd',
     'active': True,
-    'sub_cmds': [
-        {
-            'name': 'install',
-            'action': action_install,
-        }
-    ]
+    'action': action_xcd,
 }
 
 xexit_action = {

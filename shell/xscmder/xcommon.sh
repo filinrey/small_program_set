@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-source xlogger.sh
+source $x_real_dir/xlogger.sh
 
 xcommon_file_name="xcommon.sh"
 

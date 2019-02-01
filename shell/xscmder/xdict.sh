@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-source xlogger.sh
+source $x_real_dir/xlogger.sh
 
 xdict_file_name="xdict.sh"
 
@@ -490,7 +490,7 @@ function xdict_get_action()
     return 0
 }
 
-xdict_parse_from_file "xdict.def"
+xdict_parse_from_file "$x_real_dir/xdict.def"
 
 for key in $(seq 1 $((dicts_root_key-1))); do
     xlogger_debug $xdict_file_name $LINENO "root : { $key, ${dicts["$key"]} }"

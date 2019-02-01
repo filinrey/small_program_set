@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-source xglobal.sh
+source $x_real_dir/xglobal.sh
 
 declare -A xlogger_log_list
 xlogger_expect=()

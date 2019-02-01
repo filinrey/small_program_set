@@ -54,12 +54,9 @@ function show_install_help()
 function action_xinstall()
 {
     local xinstall_key=$1
+    local xinstall_cmd=$2
 
-    if [[ $xinstall_key == $x_key_tab ]]; then
-        show_install_help
-        return 0
-    fi
-    if [[ $xinstall_key == $x_key_enter ]]; then
+    if [[ $xinstall_key == $x_key_enter && -z "$xinstall_cmd" ]]; then
         echo -ne "\n\tinstalling \"$x_real_file\""
         if [[ "$x_real_file_name" == "bash" ]]; then
             echo -e " is failed. I am that you want to install, is already in using."
@@ -75,6 +72,7 @@ function action_xinstall()
         echo -e "\n\tplease run \"source ~/.bashrc\" or reopen terminal to enable \"$x_real_file\""
         let x_stop=1
     fi
+    show_install_help
 }
 
 :<<'COMMENT'

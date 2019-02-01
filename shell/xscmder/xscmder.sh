@@ -217,8 +217,8 @@ function handle_arrow_key()
 function clear_line()
 {
     length=$1
-    empty_line=""
-    for i in $(seq 1 $length); do
+    empty_line="$x_prefix_name"
+    for i in $(seq ${#x_prefix_name} $length); do
         empty_line="$empty_line "
     done
     echo -ne "\r$empty_line"
@@ -238,7 +238,10 @@ do
         break
     fi
     if [[ $is_left_right_key == 0 ]]; then
-        clear_line ${#prefix_show}
+        new_prefix_show="$x_prefix_name$input_cmd"
+        if [[ ${#new_prefix_show} -lt ${#prefix_show} ]]; then
+            clear_line ${#prefix_show}
+        fi
         prefix_show="$x_prefix_name$input_cmd"
         echo -ne "\r$prefix_show"
     fi
@@ -249,7 +252,7 @@ do
     c=`get_key`
 
     if [[ '' == $c ]]; then
-        xexit
+        let x_stop=1
     fi
 
     handle_arrow_key $c $esc_flag

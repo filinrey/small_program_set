@@ -121,23 +121,30 @@ function show_dirs()
 {
     local xcd_path=$1
     local xcd_real_path=""
+    local xcd_dir_prefix=""
+    xcd_match_dir_list=()
+    xcd_match_dir_num=0
 
     if [[ "$xcd_path" =~ ^/ ]]; then
         xcd_real_path=`dirname "$xcd_path."`
     else
         xcd_real_path=`dirname "$x_real_dir/$xcd_path."`
     fi
+    if [[ ! "$xcd_path" =~ ^.*/$ ]]; then
+        xcd_dir_prefix=`basename $xcd_path`
+    fi
     if [[ ! -d "$xcd_real_path" ]]; then
         return
     fi
     xcd_real_path="$xcd_real_path/"
-    xlogger_debug $xcd_file_name $LINENO "cur cd dir = $xcd_real_path"
+    xlogger_debug $xcd_file_name $LINENO "cur cd dir = $xcd_real_path, prefix = $xcd_dir_prefix"
     local xcd_dirs xcd_dirs_num xcd_sed_real_path
     xcd_sed_real_path=`echo "$xcd_real_path" | sed "s/\//=\//g"`
     xcd_sed_real_path=`echo "$xcd_sed_real_path" | sed "s/=/\x5c/g"`
-    xcd_dirs=(`sudo ls -d $xcd_real_path*/ | sed -r "s/^$xcd_sed_real_path(.+)$/\1/"`)
+    xcd_dirs=(`ls -d $xcd_real_path*/ 2>/dev/null | sed -r "s/^$xcd_sed_real_path(.+)$/\1/"`)
     xcd_dirs_num=${#xcd_dirs[@]}
     if [[ $xcd_dirs_num == 0 ]]; then
+        echo -e "\n\t$xcd_path is not exist, or permission denied"
         return
     fi
     if [[ $xcd_dirs_num -gt 30 ]]; then
@@ -147,29 +154,39 @@ function show_dirs()
 
     local xcd_dir xcd_line xcd_item_per_line xcd_empty_item
     local xcd_max_len_per_item=20
-    local xcd_first_print=1
     xcd_line=""
     xcd_empty_item="                    "
     xcd_item_per_line=0
+    echo -ne "\n"
     for xcd_dir in ${xcd_dirs[@]}
     do
+        if [[ ! "$xcd_dir" =~ ^$xcd_dir_prefix ]]; then
+            continue
+        fi
+        xcd_match_dir_list[$xcd_match_dir_num]=`basename "$xcd_dir"`
+        let xcd_match_dir_num=xcd_match_dir_num+1
         if [[ ${#xcd_dir} -le $xcd_max_len_per_item ]]; then
             xcd_line="$xcd_line\t$xcd_dir${xcd_empty_item:${#xcd_dir}}"
         else
             xcd_line="$xcd_line\t${xcd_dir:0:$((xcd_max_len_per_item-3))}..."
         fi
         let xcd_item_per_line=xcd_item_per_line+1
-        if [[ $xcd_item_per_line -eq 3 ]]; then
-            if [[ $xcd_first_print == 1 ]]; then
-                echo -e "\n$xcd_line"
-                let xcd_first_print=0
-            else
-                echo -e "$xcd_line"
-            fi
+        if [[ $xcd_item_per_line -eq 4 ]]; then
+            echo -e "$xcd_line"
             xcd_line=""
             let xcd_item_per_line=0
         fi
     done
+    if [[ $xcd_item_per_line -ne 0 ]]; then
+        echo -e "$xcd_line"
+    fi
+    local new_dir_prefix=`get_max_same_string "$xcd_dir_prefix" "${xcd_match_dir_list[*]}"`
+    if [[ "$new_dir_prefix" != "$xcd_dir_prefix" ]]; then
+        # optimize_tag : has to use input_cmd directly
+        new_input_cmd=`echo "$input_cmd" | sed -r "s/^(.+)$xcd_dir_prefix([ ]*)$/\1$new_dir_prefix/"`
+        input_cmd="$new_input_cmd/"
+        let cur_pos=${#input_cmd}
+    fi
 }
 
 function action_xcd()
@@ -177,7 +194,6 @@ function action_xcd()
     local xcd_key=$1
     local xcd_cmds=($2)
     local xcd_cmds_num=${#xcd_cmds[@]}
-    xlogger_debug $xcd_file_name $LINENO "cd cmds = ${xcd_cmds[@]}"
 
     if [[ $xcd_key == $x_key_tab && $xcd_cmds_num -le 1 ]]; then
         local cd_name_prefix=""
@@ -207,8 +223,12 @@ function action_xcd()
 
     if [[ $xcd_key == $x_key_enter && ${#xcd_cmds[@]} == 1 ]]; then
         local xcd_path=`get_cd_detail ${xcd_cmds[0]}`
-        cd $xcd_path
-        let x_stop=1
+        if [[ -n "$xcd_path" ]]; then
+            cd $xcd_path
+            let x_stop=1
+        else
+            echo -e "\n\tno path named \"${xcd_cmds[0]}\""
+        fi
         return
     fi
 

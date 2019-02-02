@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-source $x_real_dir/xglobal.sh
-
 declare -A xlogger_log_list
 xlogger_expect=()
 xlogger_expect_index=0
@@ -57,6 +55,11 @@ function xlogger()
 
 function xlogger_debug()
 {
+    xlogger_cur_level=${x_log_level_list["$x_cur_log_level"]}
+    xlogger_debug_level=${x_log_level_list["debug"]}
+    if [[ -n "$xlogger_cur_level" && $xlogger_cur_level -gt $xlogger_debug_level ]]; then
+        return
+    fi
     xlogger_expect=("FILE" "LINE" "INFO")
     xlogger_expect_index=0
     local BACK_IFS=$IFS
@@ -64,6 +67,22 @@ function xlogger_debug()
     xlogger_fill_log_list $@
     IFS=$BACK_IFS
     xlogger "DEBUG" "${xlogger_log_list[${xlogger_expect[0]}]}" "${xlogger_log_list[${xlogger_expect[1]}]}" "${xlogger_log_list[${xlogger_expect[2]}]}"
+}
+
+function xlogger_info()
+{
+    xlogger_cur_level=${x_log_level_list["$x_cur_log_level"]}
+    xlogger_info_level=${x_log_level_list["info"]}
+    if [[ -n "$xlogger_cur_level" && $xlogger_cur_level -gt $xlogger_info_level ]]; then
+        return
+    fi
+    xlogger_expect=("FILE" "LINE" "INFO")
+    xlogger_expect_index=0
+    local BACK_IFS=$IFS
+    IFS=""
+    xlogger_fill_log_list $@
+    IFS=$BACK_IFS
+    xlogger "INFO" "${xlogger_log_list[${xlogger_expect[0]}]}" "${xlogger_log_list[${xlogger_expect[1]}]}" "${xlogger_log_list[${xlogger_expect[2]}]}"
 }
 
 #xlogger_debug "test.sh" 11 "debug info"

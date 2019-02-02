@@ -14,8 +14,50 @@ else
     x_real_file_path="`readlink -f $0`"
 fi
 x_real_dir=${x_real_file_path%/*}
+x_real_file_name=${x_real_file_path##*/}
+x_real_file=${x_real_file_name%.*}
+x_prefix_name="$x_real_file# "
 
-source $x_real_dir/xglobal.sh
+x_data_dir="$x_real_dir/data"
+if [[ ! -d $x_data_dir ]]; then
+    `mkdir -p $x_data_dir`
+fi
+
+x_log_file="$x_data_dir/$x_real_file.log"
+x_login_history="$x_data_dir/login_history"
+x_cmd_history="$x_data_dir/cmd_history"
+x_cd_history="$x_data_dir/cd_history"
+
+`touch $x_login_history`
+`touch $x_cmd_history`
+`touch $x_cd_history`
+
+x_origin_stty_config=`stty -g`
+
+x_key_tab=1
+x_key_enter=2
+x_key_space=3
+
+x_stop=0
+
+declare -A x_log_level_list
+x_log_level_list+=(["debug"]=0)
+x_log_level_list+=(["DEBUG"]=0)
+x_log_level_list+=(["info"]=1)
+x_log_level_list+=(["INFO"]=1)
+x_log_level_list+=(["error"]=2)
+x_log_level_list+=(["ERROR"]=2)
+x_cur_log_level="info"
+
+let OPTIND=1
+while getopts ":l:" opt
+do
+    if [[ "$opt" == "l" ]]; then
+        x_cur_log_level="$OPTARG"
+    fi
+done
+let OPTIND=1
+
 source $x_real_dir/xcommon.sh
 source $x_real_dir/xdict.sh
 source $x_real_dir/xexit.sh
@@ -253,6 +295,7 @@ do
 
     if [[ '' == $c ]]; then
         let x_stop=1
+        continue
     fi
 
     handle_arrow_key $c $esc_flag

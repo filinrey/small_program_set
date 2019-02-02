@@ -8,10 +8,13 @@ function show_cd_help()
 {
     echo -e "\n\t# cd [NAME] [PATH]"
     echo -e "\t     -> cd directory through [PATH] directly or [NAME] which is alias of one directory"
+    echo -e "\t     -> if [PATH] is \"-\", remove [NAME] from history"
     echo -e "\tExample 1: # cd work_dir /home/fenghxu/src"
     echo -e "\t           -> [NAME] is \"work_dir\", [PATH] is \"/home/fenghxu/src\""
     echo -e "\tExample 1: # cd work_dir"
     echo -e "\t           -> after Example 1, can use work_dir instead of /home/fenghxu/src"
+    echo -e "\tExample 1: # cd work_dir -"
+    echo -e "\t           -> remove work_dir, and cann't find path in Example 2"
 }
 
 function show_cd_history()
@@ -25,9 +28,18 @@ function show_cd_history()
     if [[ $file_size -eq 0 ]]; then
         return 0
     fi
+    local max_name_length=`cat $x_cd_history | awk '{print $1}' | awk '{print length, $0}' | sort -n -s -r | awk '{print $1}' | head -n 1`
+    local empty_item=""
+    for i in $(seq 0 $max_name_length)
+    do
+        empty_item="$empty_item "
+    done
 
     local is_first_print=1
-    local line item new_line
+    local line item new_line colors color_index
+    colors[0]="blue_u"
+    colors[1]="green_u"
+    color_index=0
     BACK_IFS=$IFS
     IFS=""
     while read line
@@ -47,7 +59,10 @@ function show_cd_history()
             let is_first_print=0
             echo -ne "\n"
         fi
-        echo -e "\t${item[0]} : ${item[1]}"
+        local name_length=${#item[0]}
+        format_color_string "${item[0]}" "${colors[$color_index]}"
+        let color_index=$(((color_index+1)%2))
+        echo -e "\t$color_string${empty_item:0:$((max_name_length-name_length))} : ${item[1]}"
         xcd_match_name_list[$xcd_match_name_num]="${item[0]}"
         let xcd_match_name_num=xcd_match_name_num+1
     done < $x_cd_history
@@ -115,6 +130,45 @@ function store_cd_history()
         echo "$xcd_name    $xcd_path" >> $temp_cd_history
     fi
     `mv $temp_cd_history $x_cd_history`
+}
+
+function remove_cd_history()
+{
+    local xcd_name=$1
+
+    file_size=`stat -c %s $x_cd_history`
+    if [[ $file_size -eq 0 ]]; then
+        echo "no history named $xcd_name"
+        return
+    fi
+
+    local line item new_line
+    local is_remove=0
+    local temp_cd_history="$x_cd_history.tmp"
+    `rm -f $temp_cd_history 2>/dev/null`
+    BACK_IFS=$IFS
+    IFS=""
+    while read line
+    do
+        IFS=$BACK_IFS
+        item=($line)
+        IFS=""
+        if [[ ${#item[@]} -eq 0 ]]; then
+            continue
+        fi
+        if [[ "${item[0]}" != "$xcd_name" ]]; then
+            echo "$line" >> $temp_cd_history
+        else
+            let is_remove=1
+        fi
+    done < $x_cd_history
+    IFS=$BACK_IFS
+    if [[ $is_remove == 1 ]]; then
+        `mv $temp_cd_history $x_cd_history`
+        echo -e "\n\tremove $xcd_name successfully"
+    else
+        echo -e "\n\tno history named $xcd_name"
+    fi
 }
 
 function show_dirs()
@@ -233,6 +287,10 @@ function action_xcd()
     fi
 
     if [[ $xcd_key == $x_key_enter && ${#xcd_cmds[@]} == 2 ]]; then
+        if [[ "${xcd_cmds[1]}" == "-" ]]; then
+            remove_cd_history "${xcd_cmds[0]}"
+            return
+        fi
         if [[ ! -d "${xcd_cmds[1]}" ]]; then
             echo -e "\n\t\"${xcd_cmds[1]}\" is not exist"
             return

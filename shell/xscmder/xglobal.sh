@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-x_cur_dir=$(cd $(dirname $0); pwd)
-x_cur_file_name="$(basename $0)"
-x_cur_file_path="$x_cur_dir/$x_cur_file_name"
+#x_cur_dir=$(sudo cd $(dirname $0); pwd)
+#x_cur_file_name="$(basename $0)"
+#x_cur_file_path="$x_cur_dir/$x_cur_file_name"
 
 if [[ -z "$x_real_file_path" ]]; then
     x_real_file_path="`readlink -f $0`"

@@ -13,6 +13,7 @@ if [[ "$0" == "bash" ]]; then
 else
     x_real_file_path="`readlink -f $0`"
 fi
+x_real_dir=${x_real_file_path%/*}
 
 source $x_real_dir/xglobal.sh
 
@@ -31,6 +32,7 @@ source $x_real_dir/xdict.sh
 source $x_real_dir/xexit.sh
 source $x_real_dir/xinstall.sh
 source $x_real_dir/xcd.sh
+source $x_real_dir/xhistory.sh
 
 main_file_name="xscmder.sh"
 
@@ -41,6 +43,7 @@ is_arrow_key=0
 cur_pos=0
 input_cmd=""
 esc_time=0
+cmd_history_lineno=0
 
 stty -echo
 
@@ -72,6 +75,7 @@ function handle_enter_key()
     cmd_deep=$?
     cmd_action=`xdict_get_action "${cmds[*]:0:$cmd_deep}"`
     if [[ -n "$cmd_action" ]]; then
+        store_cmd "$input_cmd"
         xlogger_debug $main_file_name $LINENO "run action : $cmd_action"
         $cmd_action $x_key_enter "${cmds[*]:$cmd_deep}"
         input_cmd=""
@@ -200,15 +204,31 @@ function handle_arrow_key()
             return 0
         fi
         if [[ 'A' == $key ]]; then
+            # UP KEY
+            if [[ $cmd_history_lineno -lt $x_max_num_cmd_history ]]; then
+                let cmd_history_lineno=cmd_history_lineno+1
+                input_cmd=`fetch_cmd $cmd_history_lineno`
+                let cmd_history_lineno=$?
+                cur_pos=${#input_cmd}
+            fi
             let is_left_right_key=0
         elif [[ 'B' == $key ]]; then
+            # DOWN KEY
+            if [[ $cmd_history_lineno -gt 0 ]]; then
+                let cmd_history_lineno=cmd_history_lineno-1
+                input_cmd=`fetch_cmd $cmd_history_lineno`
+                let cmd_history_lineno=$?
+                cur_pos=${#input_cmd}
+            fi
             let is_left_right_key=0
         elif [[ 'D' == $key ]]; then
+            # LEFT KEY
             if [[ $cur_pos -gt 0 ]]; then
                 let cur_pos=cur_pos-1
             fi
             let is_left_right_key=1
         elif [[ 'C' == $key ]]; then
+            # RIGHT KEY
             if [[ $cur_pos -lt ${#input_cmd} ]]; then
                 let cur_pos=cur_pos+1
             fi

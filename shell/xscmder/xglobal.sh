@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+x_cur_file_name=`basename $0`
+
 if [[ -z "$x_real_file_path" ]]; then
     x_real_file_path="`readlink -f $0`"
 fi
@@ -29,6 +31,7 @@ x_key_enter=2
 x_key_space=3
 
 x_stop=0
+x_max_num_cmd_history=20
 
 declare -A x_log_level_list
 x_log_level_list+=(["debug"]=0)

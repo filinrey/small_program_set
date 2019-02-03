@@ -58,7 +58,7 @@ function action_xinstall()
 
     if [[ $xinstall_key == $x_key_enter && -z "$xinstall_cmd" ]]; then
         echo -ne "\n\tinstalling \"$x_real_file\""
-        if [[ "$x_real_file_name" == "bash" ]]; then
+        if [[ "$x_cur_file_name" == "bash" ]]; then
             echo -e " is failed. I am that you want to install, is already in using."
             return
         fi

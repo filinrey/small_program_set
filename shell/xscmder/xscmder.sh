@@ -33,6 +33,7 @@ source $x_real_dir/xexit.sh
 source $x_real_dir/xinstall.sh
 source $x_real_dir/xcd.sh
 source $x_real_dir/xhistory.sh
+source $x_real_dir/xssh.sh
 
 main_file_name="xscmder.sh"
 

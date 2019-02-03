@@ -1,20 +1,6 @@
 xssh_action = {
     'name': 'ssh',
-    'sub_cmds': [
-        {
-            'name': 'login',
-            'active': False,
-            'action': action_login,
-        },
-        {
-            'name': 'check',
-            'action': action_check,
-        },
-        {
-            'name': 'remove',
-            'action': action_remove,
-        },
-    ],
+    'action': action_xssh,
 }
 
 xrun_action = {

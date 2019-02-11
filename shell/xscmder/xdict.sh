@@ -468,13 +468,16 @@ function xdict_get_sub_cmd_list()
 
 function xdict_get_cmd_list()
 {
-    local xdict_cmds=($1)
-    local xdict_cmds_num=${#xdict_cmds[@]}
-    local xdict_sub_cmd=""
-    local xdict_cmd=""
-    local xdict_cmd_list=""
-    local xdict_prev_cmd_list=""
-    local xdict_sub_cmd_num=0
+    local xdict_cmds xdict_cmds_num xdict_sub_cmd
+    local xdict_cmd xdict_cmd_list xdict_prev_cmd_list xdict_sub_cmd_num
+
+    xdict_cmds=($1)
+    xdict_cmds_num=${#xdict_cmds[@]}
+    xdict_sub_cmd=""
+    xdict_cmd=""
+    xdict_cmd_list=""
+    xdict_prev_cmd_list=""
+    xdict_sub_cmd_num=0
     xlogger_debug $xdict_file_name $LINENO "get cmd list base on : ${xdict_cmds[@]}"
 
     xdict_cmd_list=`xdict_get_sub_cmd_list ""`
@@ -503,10 +506,12 @@ function xdict_get_cmd_list()
 
 function xdict_get_action()
 {
-    local xdict_cmds=($1)
-    local xdict_cmds_num=${#xdict_cmds[@]}
-    local xdict_action_key=""
-    local xdict_action=""
+    local xdict_cmds xdict_cmds_num xdict_action_key xdict_action
+
+    xdict_cmds=($1)
+    xdict_cmds_num=${#xdict_cmds[@]}
+    xdict_action_key=""
+    xdict_action=""
 
     if [[ $xdict_cmds_num -eq 0 ]]; then
         echo ""

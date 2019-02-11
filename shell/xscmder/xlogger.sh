@@ -11,7 +11,7 @@ xlogger_expect_index=0
 function xlogger_fill_log_list()
 {
     local expect_num=${#xlogger_expect[@]}
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         let expect_num=expect_num+1
     fi
     local input_num=$#
@@ -40,13 +40,13 @@ function xlogger()
 {
     xlogger_expect=("DATE" "LEVEL" "FILE" "LINE" "INFO")
     cur_date=`date +%Y-%m-%d\ %H:%M:%S,%N`
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         xlogger_log_list["${xlogger_expect[1]}"]="$cur_date"
     else
         xlogger_log_list["${xlogger_expect[0]}"]="$cur_date"
     fi
     let xlogger_expect_index=1
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         let xlogger_expect_index=2
     fi
     local BACK_IFS=$IFS
@@ -55,7 +55,7 @@ function xlogger()
     IFS=$BACK_IFS
 
     let xlogger_expect_index=0
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         let xlogger_expect_index=1
     fi
     log_info="${xlogger_log_list[\"${xlogger_expect[$xlogger_expect_index]}\"]} "
@@ -79,14 +79,14 @@ function xlogger_debug()
     fi
     xlogger_expect=("FILE" "LINE" "INFO")
     let xlogger_expect_index=0
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         let xlogger_expect_index=1
     fi
     local BACK_IFS=$IFS
     IFS=""
     xlogger_fill_log_list $@
     IFS=$BACK_IFS
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         xlogger "DEBUG" "${xlogger_log_list[\"${xlogger_expect[1]}\"]}" "${xlogger_log_list[\"${xlogger_expect[2]}\"]}" "${xlogger_log_list[\"${xlogger_expect[3]}\"]}"
     else
         xlogger "DEBUG" "${xlogger_log_list[\"${xlogger_expect[0]}\"]}" "${xlogger_log_list[\"${xlogger_expect[1]}\"]}" "${xlogger_log_list[\"${xlogger_expect[2]}\"]}"
@@ -102,14 +102,14 @@ function xlogger_info()
     fi
     xlogger_expect=("FILE" "LINE" "INFO")
     let xlogger_expect_index=0
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         let xlogger_expect_index=1
     fi
     local BACK_IFS=$IFS
     IFS=""
     xlogger_fill_log_list $@
     IFS=$BACK_IFS
-    if [[ $is_cygwin -eq 1 ]]; then
+    if [[ $is_zsh -eq 1 ]]; then
         xlogger "INFO" "${xlogger_log_list[\"${xlogger_expect[1]}\"]}" "${xlogger_log_list[\"${xlogger_expect[2]}\"]}" "${xlogger_log_list[\"${xlogger_expect[3]}\"]}"
     else
         xlogger "INFO" "${xlogger_log_list[\"${xlogger_expect[0]}\"]}" "${xlogger_log_list[\"${xlogger_expect[1]}\"]}" "${xlogger_log_list[\"${xlogger_expect[2]}\"]}"

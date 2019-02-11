@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-is_cygwin=0
-if [[ `uname -s` =~ "CYGWIN" ]]; then
-    is_cygwin=1
+is_zsh=0
+if [[ `env | grep SHELL` =~ "zsh" ]]; then
+    is_zsh=1
 fi
 
 x_cur_file_name=`basename $0`

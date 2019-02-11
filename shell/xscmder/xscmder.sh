@@ -66,8 +66,9 @@ function get_key()
 
 function handle_enter_key()
 {
-    local cmds=(${input_cmd})
-    local cmds_num=${#cmds[@]}
+    local cmds cmds_num
+    cmds=(${input_cmd})
+    cmds_num=${#cmds[@]}
     if [[ $cmds_num == 0 ]]; then
         echo ""
         return
@@ -89,7 +90,9 @@ function handle_enter_key()
 
 function handle_space_key()
 {
-    local new_input_cmd="$1"
+    local new_sub_cmd result cmd_list cmd_deep
+    local new_input_cmd cmds cmds_num
+    new_input_cmd="$1"
     if [[ ${#new_input_cmd} == 0 ]]; then
         return -1
     fi
@@ -97,9 +100,8 @@ function handle_space_key()
         return -1
     fi
 
-    local new_sub_cmd result cmd_list cmd_deep
-    local cmds=($new_input_cmd)
-    local cmds_num=${#cmds[@]}
+    cmds=($new_input_cmd)
+    cmds_num=${#cmds[@]}
     cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$((cmds_num-1))}"`)
     cmd_deep=$?
     xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmd_deep-1))]} from ${cmd_list[@]}"
@@ -160,7 +162,6 @@ function handle_tab_key()
 
     local new_input_cmd=""
     local i
-    #for(( i=0;i<$((cmds_num-1));i++ ))
     for i in $(seq 1 $((cmds_num-1)))
     do
         new_input_cmd=$new_input_cmd${cmds[$((i-1))]}" "
@@ -265,6 +266,12 @@ c=' '
 prefix_show=""
 initial_end_time=`date +%s`
 echo -ne "$((initial_end_time-initial_start_time)) second\n"
+
+if [[ `env | grep SHELL` =~ "zsh" ]]; then
+    date_echo "don't support zsh"
+    let x_stop=1
+fi
+
 while [ 1 ]
 do
     if [[ $x_stop == 1 ]]; then

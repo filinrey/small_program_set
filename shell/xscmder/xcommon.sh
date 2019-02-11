@@ -1,10 +1,7 @@
 #!/usr/bin/bash
 
 if [[ -z "$x_real_dir" ]]; then
-    source xglobal.sh
     source xlogger.sh
-else
-    source $x_real_dir/xlogger.sh
 fi
 
 xcommon_file_name="xcommon.sh"
@@ -88,5 +85,8 @@ function format_color_string()
     color_string="\\033[${color_style}m$string\\033[${endl}m"
 }
 
-#format_color_string "test_string" "green_u"
-#echo -e "$color_string"
+function date_echo()
+{
+    string="$1"
+    echo -e "`date +%Y-%m-%d\ %H:%M:%S,%N` $string"
+}

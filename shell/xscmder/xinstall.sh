@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-source $x_real_dir/xlogger.sh
-
 xinstall_file_name="xinstall.sh"
 
 :<<'COMMENT'

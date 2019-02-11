@@ -1,10 +1,7 @@
 #!/usr/bin/bash
 
 if [[ -z "$x_real_dir" ]]; then
-    source xglobal.sh
     source xlogger.sh
-else
-    source $x_real_dir/xlogger.sh
 fi
 
 xhistory_file_name="xhistory.sh"

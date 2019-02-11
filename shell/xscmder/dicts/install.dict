@@ -1,0 +1,4 @@
+xinstall_action = {
+    'name': 'install',
+    'action': action_xinstall,
+}

@@ -1,0 +1,6 @@
+# active is optional, [no active item] = [active is True]
+xcd_action = {
+    'name': 'cd',
+    'active': True,
+    'action': action_xcd,
+}

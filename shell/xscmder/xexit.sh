@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-source $x_real_dir/xlogger.sh
-
 function show_exit_help()
 {
     echo -e "\n\t# exit"

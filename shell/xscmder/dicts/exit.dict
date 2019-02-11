@@ -1,0 +1,4 @@
+xexit_action = {
+    'name': 'exit',
+    'action': action_xexit,
+}

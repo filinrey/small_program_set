@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-echo -ne "initial command system : "
+echo -ne "`date +%Y-%m-%d\ %H:%M:%S,%N` initial command system : "
 initial_start_time=`date +%s`
 
 if [[ "$0" == "bash" ]]; then
@@ -27,6 +27,7 @@ do
 done
 let OPTIND=1
 
+source $x_real_dir/xlogger.sh
 source $x_real_dir/xcommon.sh
 source $x_real_dir/xdict.sh
 source $x_real_dir/xexit.sh
@@ -118,9 +119,10 @@ function handle_space_key()
 
 function handle_tab_key()
 {
-    local cmds=(${input_cmd})
-    local cmds_num=${#cmds[@]}
-    local used_cmds_num=$cmds_num
+    local cmds cmds_num used_cmds_num
+    cmds=(${input_cmd})
+    cmds_num=${#cmds[@]}
+    used_cmds_num=$cmds_num
     if [[ $cmds_num == 0 ]]; then
         cmds[$cmds_num]=""
         let cmds_num=cmds_num+1
@@ -158,9 +160,10 @@ function handle_tab_key()
 
     local new_input_cmd=""
     local i
-    for(( i=0;i<$((cmds_num-1));i++ ))
+    #for(( i=0;i<$((cmds_num-1));i++ ))
+    for i in $(seq 1 $((cmds_num-1)))
     do
-        new_input_cmd=$new_input_cmd${cmds[$i]}" "
+        new_input_cmd=$new_input_cmd${cmds[$((i-1))]}" "
     done
     xlogger_debug $main_file_name $LINENO "new_input_cmd = ${new_input_cmd}, new_sub_cmd = $new_sub_cmd"
     input_cmd=$new_input_cmd$new_sub_cmd

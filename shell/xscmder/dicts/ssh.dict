@@ -1,0 +1,4 @@
+xssh_action = {
+    'name': 'ssh',
+    'action': action_xssh,
+}

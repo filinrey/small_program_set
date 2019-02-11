@@ -1,0 +1,29 @@
+#xtest_action = {
+    'name': 'test',
+    'active': False,
+    'sub_cmds': [
+        {
+            'name': 'first',
+            'sub_cmds': [
+                {
+                    'name': 'second',
+                    'action': second_action,
+                },
+                {
+                    'name': 'third',
+                    'action': third_action,
+                },
+            ],
+
+        },
+        {
+            'name': 'sprint',
+            'sub_cmds': [
+                {
+                    'name': 'summer',
+                    'action': summer_action,
+                },
+            ],
+        },
+    ],
+}

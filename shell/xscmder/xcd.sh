@@ -1,7 +1,5 @@
 #!/usr/bin/bash
 
-source $x_real_dir/xlogger.sh
-
 xcd_file_name="xcd.sh"
 
 function show_cd_help()

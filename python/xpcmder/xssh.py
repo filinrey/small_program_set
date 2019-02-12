@@ -13,14 +13,25 @@ from xcommon import get_max_same_string
 from xdefine import XPrintStyle
 
 
-def show_login_help():
-    xprint_new_line('\t# ssh login [NAME] [IP] [USER] [PASSWORD]', XPrintStyle.YELLOW)
-    xprint_head('\tExample 1: # ssh login DU10')
-    xprint_head('\t           -> DU10 is name of one history which had been logined by using this program')
-    xprint_head('\tExample 2: # ssh login DU10 1.2.3.4 root rootme')
+def show_ssh_help():
+    xprint_new_line('\t# ssh [NAME] [IP] [USER] [PASSWORD]', XPrintStyle.YELLOW)
+    xprint_head('\t# ssh [NAME | IP] -', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # ssh DU10 1.2.3.4 root rootme')
     xprint_head('\t           -> NAME=DU10, IP=1.2.3.4, USER=root PASSWORD=rootme')
-    xprint_head('\t           -> if login firstly, will store it as login history with DU10. DU10 can be used directly next time as Example 1')
-    xprint_head('\t           -> if DU10 is already exist in login history, will replace the old one.')
+    xprint_head('\t           -> form to root@1.2.3.4 with password=rootme to login remote')
+    xprint_head('\t           -> store this login to history named DU10')
+    xprint_head('\tExample 2: # ssh DU10')
+    xprint_head('\t           -> get detail of DU10 in Example 1 to login remote')
+    xprint_head('\tExample 3: # ssh DU10 -')
+    xprint_head('\t           -> remove DU10 from history')
+    xprint_head('\t           -> only in this format, DU10 can be regular expression')
+    xprint_head('\tExample 3.1: # ssh 1.2.3.4 -')
+    xprint_head('\tExample 3.2: # ssh ^du.*$ -')
+    xprint_head('\tExample 3.3: # ssh ^[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.]10$ -')
+    xprint_head('\t             -> Example 3 and 3.1 only remove history which name = DU10 or ip = 1.2.3.4')
+    xprint_head('\t             -> Example 3.2 remove history that name begin with du, like as du10, du1, du300, etc.')
+    xprint_head('\t             -> Example 3.3 remove history that ip end with .10, like as 1.2.3.10, 10.34.200.10, etc.')
+    xprint_head('\t             -> regular expression should be begin with ^ and end with $, otherwise handle as normal string')
 
 
 def show_login_history(name=None):
@@ -128,57 +139,6 @@ def run_system_command(cmds):
     os.system(system_command)
 
 
-def action_login(cmds, key):
-    num_cmd = len(cmds)
-    if cmds[num_cmd - 1] == '':
-        del cmds[num_cmd - 1]
-        num_cmd -= 1
-
-    if num_cmd == 0 and key == XKey.TAB:
-        show_login_history()
-        return
-    if num_cmd == 1 and key == XKey.TAB:
-        match_name_list = show_login_history(cmds[0])
-        new_cmd, _ = get_max_same_string(cmds[0], match_name_list)
-        xlogger.debug('find new cmd {} from login history'.format(new_cmd))
-        return {'flag': True, 'new_sub_cmd': new_cmd}
-
-    if num_cmd == 1 and key == XKey.ENTER:
-        login_option = get_login_history_by_name(cmds[0])
-        if login_option:
-            show_info = '\ttrying to connect ' + login_option['ip'] + ' as ' + login_option['user'] + ' with ' + login_option['password']
-            xprint_new_line(show_info)
-            run_system_command([login_option['ip'], login_option['user'], login_option['password']])
-        return {'flag': True, 'new_input_cmd': ''}
-    if num_cmd == XConst.NUM_ELEM_PER_LOGIN_HISTORY_ITEM and key == XKey.ENTER:
-        update_login_history(cmds[0], cmds[1], cmds[2], cmds[3])
-        show_info = '\ttrying to connect ' + cmds[1] + ' as ' + cmds[2] + ' with ' + cmds[3]
-        xprint_new_line(show_info)
-        run_system_command(cmds[1:])
-        return {'flag': True, 'new_input_cmd': ''}
-
-    show_login_help()
-
-
-def action_check(cmds, key):
-    print ('\r')
-    print ('\r', end='')
-    print ('\t# ssh check // command is inactive currently')
-
-
-def show_remove_help():
-    xprint_new_line('\t# ssh remove [NAME | IP]', XPrintStyle.YELLOW)
-    xprint_head('\t             -> NAME or IP can be regular expression or normal string')
-    xprint_head('\tExample 1: # ssh remove du10')
-    xprint_head('\tExample 2: # ssh remove 1.2.3.4')
-    xprint_head('\tExample 3: # ssh remove ^du.*$')
-    xprint_head('\tExample 3: # ssh remove ^[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.]10$')
-    xprint_head('\t           -> Example 1 and 2 only remove history which name = du10 or ip = 1.2.3.4')
-    xprint_head('\t           -> Example 3 remove history that name begin with du, like as du10, du1, du300, etc.')
-    xprint_head('\t           -> Example 4 remove history that ip end with .10, like as 1.2.3.10, 10.34.200.10, etc.')
-    xprint_head('\t           -> regular expression should be begin with ^ and end with $, otherwise handle as normal string')
-
-
 def remove_login_history(pattern):
     if os.path.getsize(XConst.LOGIN_HISTORY_FILE) == 0:
         return None
@@ -233,7 +193,7 @@ def show_remove_result(result):
         xprint_head(show_info)
 
 
-def action_remove(cmds, key):
+def action_xssh(cmds, key):
     num_cmd = len(cmds)
     if cmds[num_cmd - 1] == '':
         del cmds[num_cmd - 1]
@@ -249,27 +209,27 @@ def action_remove(cmds, key):
         return {'flag': True, 'new_sub_cmd': new_cmd}
 
     if num_cmd == 1 and key == XKey.ENTER:
+        login_option = get_login_history_by_name(cmds[0])
+        if login_option:
+            show_info = '\ttrying to connect ' + login_option['ip'] + ' as ' + login_option['user'] + ' with ' + login_option['password']
+            xprint_new_line(show_info)
+            run_system_command([login_option['ip'], login_option['user'], login_option['password']])
+        return {'flag': True, 'new_input_cmd': ''}
+    if num_cmd == 2 and key == XKey.ENTER and cmds[1] == '-':
         remove_list = remove_login_history(cmds[0])
         show_remove_result(remove_list)
         return {'flag': True, 'new_input_cmd': ''}
+    if num_cmd == XConst.NUM_ELEM_PER_LOGIN_HISTORY_ITEM and key == XKey.ENTER:
+        update_login_history(cmds[0], cmds[1], cmds[2], cmds[3])
+        show_info = '\ttrying to connect ' + cmds[1] + ' as ' + cmds[2] + ' with ' + cmds[3]
+        xprint_new_line(show_info)
+        run_system_command(cmds[1:])
+        return {'flag': True, 'new_input_cmd': ''}
 
-    show_remove_help()
+    show_ssh_help()
 
 
 xssh_action = {
     'name': 'ssh',
-    'sub_cmds': [
-        {
-            'name': 'login',
-            'action': action_login,
-        },
-        {
-            'name': 'check',
-            'action': action_check,
-        },
-        {
-            'name': 'remove',
-            'action': action_remove,
-        },
-    ]
+    'action': action_xssh,
 }

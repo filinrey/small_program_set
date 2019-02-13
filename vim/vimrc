@@ -139,10 +139,10 @@ set expandtab
 "autocmd BufRead,BufNewFile *.part set filetype=html
 "autocmd BufRead,BufNewFile *.vue setlocal filetype=vue.html.javascript tabstop=2 shiftwidth=2 softtabstop=2 expandtab ai
 
-"function! <SID>StripTrailingWhitespaces()
-"    let l = line(".")
-"    let c = col(".")
-"    %s/\s\+$//e
-"    call cursor(l, c)
-"endfunc
-"autocmd FileType c,cpp,java,go,php,javascript,puppet,python,rust,twig,xml,yml,perl autocmd BufWritePre <buffer> :call <SID>StripTrailingWhitespaces()
+function! <SID>StripTrailingWhitespaces()
+    let l = line(".")
+    let c = col(".")
+    %s/\s\+$//e
+    call cursor(l, c)
+endfunc
+autocmd FileType c,cpp,java,go,php,javascript,puppet,python,rust,twig,xml,yml,perl,sh autocmd BufWritePre <buffer> :call <SID>StripTrailingWhitespaces()

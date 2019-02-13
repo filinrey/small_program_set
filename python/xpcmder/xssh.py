@@ -38,6 +38,10 @@ def show_login_history(name=None):
     xprint_new_line()
     seq = 0
     count = 0
+    f = os.popen('cat ' + XConst.LOGIN_HISTORY_FILE + ' | tr -d \' \' | wc -L')
+    max_length = int(f.readline()) + 5
+    f.close()
+    xlogger.debug('max_length = {}'.format(max_length))
     f = open(XConst.LOGIN_HISTORY_FILE, 'r')
     line = f.readline()
     new_line = ''
@@ -56,8 +60,8 @@ def show_login_history(name=None):
         new_item = sub_cmds[0] + ': ' + sub_cmds[2] + '@' + sub_cmds[1] + ' *' + sub_cmds[3]
         len_new_item = len(new_item)
         new_item = format_color_string(sub_cmds[0], XPrintStyle.GREEN_U) + ': ' + sub_cmds[2] + '@' + sub_cmds[1] + ' *' + sub_cmds[3]
-        if len_new_item < XConst.MAX_SIZE_PER_LOGIN_HISTORY_ITEM:
-            new_item = new_item + ' '*(XConst.MAX_SIZE_PER_LOGIN_HISTORY_ITEM - len_new_item)
+        if len_new_item < max_length:
+            new_item = new_item + ' '*(max_length - len_new_item)
         new_line = new_line + '\t' + new_item
         seq += 1
         count += 1
@@ -193,7 +197,7 @@ def show_remove_result(result):
         xprint_head(show_info)
 
 
-def action_xssh(cmds, key):
+def action_ssh(cmds, key):
     num_cmd = len(cmds)
     if cmds[num_cmd - 1] == '':
         del cmds[num_cmd - 1]
@@ -231,5 +235,5 @@ def action_xssh(cmds, key):
 
 xssh_action = {
     'name': 'ssh',
-    'action': action_xssh,
+    'action': action_ssh,
 }

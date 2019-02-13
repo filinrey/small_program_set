@@ -7,9 +7,7 @@ import tty
 import termios
 import time
 import re
-import os.path
-import shutil
-from xdefine import XKey, XConst
+from xdefine import XKey, XConst, XPrintStyle
 from xlogger import xlogger
 from xssh import xssh_action
 from xcd import xcd_action
@@ -17,13 +15,16 @@ from xexit import xexit_action
 from xhistory import store_command, fetch_command
 from xprint import xprint_new_line, xprint_head
 from xcommon import get_max_same_string
-from xdefine import XPrintStyle
 from xrun import xrun_action
+from xinstall import xinstall_action
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
 CUR_POS = 0
 CMD_HISTORY_LINE_NO = 0
+
+if os.path.islink(sys.argv[0]):
+    xinstall_action['active']=False
 
 ACTION_LIST = {
     'name': XConst.PYFILE_NAME,
@@ -33,8 +34,10 @@ ACTION_LIST = {
         xcd_action,
         xexit_action,
         xrun_action,
+        xinstall_action,
     ]
 }
+
 
 def clear_line(length):
     print ("\r", end='')
@@ -242,18 +245,10 @@ def handle_arrow_key(key, esc_flag, esc_time, is_left_right_key):
 
 xlogger.info('='*32)
 xlogger.info('run {}'.format(XConst.PYFILE_NAME))
-if len(sys.argv) >= 2 and sys.argv[1] == 'install':
-    link_name = '/usr/bin/' + XConst.PYFILE_NAME
-    system_command = 'sudo rm -f ' + link_name
-    os.system(system_command)
-    system_command = 'sudo ln -s ' + os.path.realpath(__file__) + ' ' + link_name
-    os.system(system_command)
-    print ('create {} link to {}'.format(link_name, os.path.realpath(__file__)))
-    exit()
 
-if not os.path.exists(XConst.CONFIG_DIRECTORY):
-    xprint_head('{} is not exists, create this directory'.format(XConst.CONFIG_DIRECTORY))
-    os.makedirs(XConst.CONFIG_DIRECTORY)
+if not os.path.exists(XConst.CONFIG_DIR):
+    xprint_head('{} is not exists, create this directory'.format(XConst.CONFIG_DIR))
+    os.makedirs(XConst.CONFIG_DIR)
 if not os.path.exists(XConst.LOGIN_HISTORY_FILE):
     xprint_head('create an empty {}'.format(XConst.LOGIN_HISTORY_FILE))
     os.mknod(XConst.LOGIN_HISTORY_FILE)
@@ -296,7 +291,6 @@ while True:
     elif ord(ch) == 0x09:
         # tab key
         show_command_list(INPUT_CMD, XKey.TAB)
-        clear_line(len(PREFIX_SHOW))
     elif ord(ch) == 0x7f:
         # backspace key
         if CUR_POS > 0:

@@ -28,3 +28,11 @@ def xprint_new_line(text=None, style=None):
 def xprint_head(text, style=None):
     print ('\r', end='')
     print (format_color_string(text, style))
+
+
+def xprint_same_line(text, style=None):
+    print (format_color_string(text, style), end='')
+
+
+def xprint(text, style=None):
+    print (format_color_string(text, style))

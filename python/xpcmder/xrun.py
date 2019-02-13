@@ -17,7 +17,7 @@ def show_run_help():
     xprint_new_line('\t# run [COMMAND]', XPrintStyle.YELLOW)
     xprint_head('\tExample 1: # run ls -l ~/')
     xprint_head('\tExample 2: # run ifconfig eth0')
-    xprint_head('\t           -> COMMAND can be any sentence which can be executed in console')
+    xprint_head('\t           -> COMMAND can be a simple sentence which can be executed in console')
 
 
 def action_run(cmds, key):

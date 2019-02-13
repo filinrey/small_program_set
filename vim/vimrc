@@ -34,8 +34,10 @@ autocmd bufenter *
             \ endif
 let NERDTreeShowHidden = 1
 
-let g:ctrlp_map = '<c-p>'
-let g:ctrlp_cmd = 'CtrlP'
+"let g:ctrlp_map = '<c-p>'
+"let g:ctrlp_cmd = 'CtrlP'
+map <F4> :CtrlPMixed<CR>
+map <F5> :CtrlPMRU<CR>
 let g:ctrlp_working_path_mode = '0'
 let g:ctrlp_custom_ignore = {
     \ 'dir':    '\v[\/]\.(git|svn)$',
@@ -45,12 +47,14 @@ let g:ctrlp_custom_ignore = {
 let g:ctrlp_by_filename = 1
 "默认不使用正则表达式，置1改为默认使用正则表达式，可以用<C-r>进行切换
 let g:ctrlp_regexp = 0
+let g:ctrlp_mruf_max=500
+let g:ctrlp_follow_symlinks=1
 
-map <F4> :CtrlPFunky<cr>
+map <F6> :CtrlPFunky<cr>
 let g:ctrlp_extensions = ['funky']
 let g:ctrlp_funky_syntax_highlight = 1
 
-map <F5> :Tlist<cr>
+map <F7> :Tlist<cr>
 let Tlist_Ctags_Cmd = 'ctags'
 let Tlist_Show_One_File = 1
 let Tlist_Exit_OnlyWindow = 1

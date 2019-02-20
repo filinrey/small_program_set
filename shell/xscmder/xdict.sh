@@ -110,11 +110,17 @@ max_cmds_per_level=1
 
 function get_whole_prefix()
 {
-    list=($1)
+    local list index whole_prefix list_string
+    if [[ $x_is_zsh -eq 1 ]]; then
+        list_string=$1
+        list=(${(s: :)list_string})
+    else
+        list=($1)
+    fi
     index=$2
 
     whole_prefix=""
-    for i in $(seq 1 $index)
+    for i in $(seq $((x_inc_index+1)) $index)
     do
         whole_prefix=$whole_prefix"_"${list[$((i-1))]}
     done
@@ -131,8 +137,10 @@ function xdict_parse()
         echo "is not dict string"
         return -1
     fi
+    local content prefix prefix_list prefix_index
+    local name_list name_num_list name_index
     dict_root_name=`echo $dict | sed -r "s/^[a-zA-Z_0-9]+=\{[\"\']name[\"\']:[\"\']([a-zA-Z_0-9]+)[\"\'].+/\1/"`
-    dicts+=(["$dicts_root_key"]="$dict_root_name")
+    dicts[$dicts_root_key]="$dict_root_name"
     let dicts_root_key=dicts_root_key+1
 
     content=`echo ${dict#*${dict_root_name}=}`
@@ -140,10 +148,10 @@ function xdict_parse()
 
     prefix=$dict_root_name
     prefix_list=()
-    prefix_index=-1
+    prefix_index=$((x_inc_index-1))
     name_list=()
     name_num_list=()
-    name_index=0
+    name_index=$x_inc_index
     name_num_list[$name_index]=$((dicts_root_key-2))
     while [ 1 ]
     do
@@ -179,9 +187,10 @@ function xdict_parse()
                 key_name=`get_whole_prefix "${prefix_list[*]}" $prefix_index`"_${name_list[$name_index]}_$first"
             fi
             date_echo "[ $key_name ] = $second\n"
-            dicts+=(["$key_name"]="$second")
+            dicts[$key_name]="$second"
             echo "$key_name=$second" >> $def_file
-        elif [[ "$content" =~ ^[\"\'][a-zA-Z_0-9]+[\"\']:\[.+\][,]*.*$ ]]; then
+        elif [[ ($x_is_zsh -eq 1 && "$content" =~ ^[\"\'][a-zA-Z_0-9]+[\"\']:\\[.+\\][,]*.*$) ||
+            ($x_is_zsh -eq 0 && "$content" =~ ^[\"\'][a-zA-Z_0-9]+[\"\']:\[.+\][,]*.*$) ]]; then
             date_echo "array item\n"
             item=`echo $content | sed -r "s/([\"\'][a-zA-Z_0-9]+[\"\']:\[.+\])[,]*.*/\1/"`
             first=`echo $item | sed -r "s/[\"\']([a-zA-Z_0-9]+)[\"\'].+/\1/"`
@@ -340,15 +349,26 @@ function xdict_read_from_file()
         if [[ ! "$line" =~ ^[0-9a-zA-Z_]+=[0-9a-zA-Z_]+$ ]]; then
             continue
         fi
-        IFS="="
-        key_value=($line)
-        IFS=""
-        if [[ "${key_value[0]}" =~ ^_name_[0-9]+$ ]]; then
-            dicts+=(["$dicts_root_key"]="${key_value[1]}")
+        if [[ $x_is_zsh -eq 1 ]]; then
+            key_value=(${line%=*} ${line#*=})
+        else
+            IFS="="
+            key_value=($line)
+            IFS=""
+        fi
+        xlogger_debug $xdict_file_name $LINENO "add [ ${key_value[$x_inc_index]} ] = ${key_value[$((x_inc_index+1))]}"
+        if [[ "${key_value[$x_inc_index]}" =~ ^_name_[0-9]+$ ]]; then
+            dicts[$dicts_root_key]="${key_value[$((x_inc_index+1))]}"
             let dicts_root_key=dicts_root_key+1
         fi
-        dicts["${key_value[0]}"]="${key_value[1]}"
-        #date_echo "[ ${key_value[0]} ] = ${key_value[1]}"
+        dicts[${key_value[$x_inc_index]}]="${key_value[$((x_inc_index+1))]}"
+        #date_echo "[ ${key_value[$x_inc_index]} ] = ${key_value[$((x_inc_index+1))]}"
+        if [[ "${key_value[$x_inc_index]}" =~ ^.*_name_[0-9]+$ ]]; then
+            local cur_num=`echo "${key_value[$x_inc_index]}" | sed -r "s/.*_name_([0-9]+)$/\1/"`
+            if [[ $cur_num -gt $max_cmds_per_level ]]; then
+                let max_cmds_per_level=cur_num
+            fi
+        fi
     done < $file
     IFS=$BACK_IFS
 }
@@ -363,7 +383,7 @@ function xdict_parse_from_file()
     IFS=""
     is_dict=0
     segment_list=()
-    segment_index=-1
+    segment_index=$((x_inc_index-1))
     segment_flag=0
     xdict_string=""
     xdict_num=0
@@ -372,7 +392,7 @@ function xdict_parse_from_file()
         if [[ "$line" =~ ^[a-zA-Z0-9_]+[\ ]*=.*$ ]]; then
             #echo "############ detect dict ############"
             let is_dict=1
-            let segment_index=-1
+            let segment_index=$((x_inc_index-1))
             let segment_flag=0
             xdict_string=""
             if [[ ! "$line" =~ ^[a-zA-Z0-9_]+[\ ]*=[\ ]*\{.*$ ]]; then
@@ -420,7 +440,7 @@ function xdict_parse_from_file()
                 let segment_index=segment_index-1
             fi
         done
-        if [[ $segment_index == -1 && $is_dict == 1 && $segment_flag == 1 ]]; then
+        if [[ $segment_index == $((x_inc_index-1)) && $is_dict == 1 && $segment_flag == 1 ]]; then
             #echo "dict_string : $xdict_string"
             #echo -e "############  whole dict ############\n"
             echo -e "\n"
@@ -438,23 +458,25 @@ function xdict_parse_from_file()
 
 function xdict_get_sub_cmd_list()
 {
+    local parent_cmd key key_value xdict_active i
     local parent_cmd="$1"
 
     if [[ -z "$parent_cmd" ]]; then
         for key in $(seq 1 $((dicts_root_key-1))); do
-            local xdict_key_value=${dicts["$key"]}
-            local xdict_active=${dicts["_${xdict_key_value}_active"]}
+            key_value=${dicts[$key]}
+            xdict_active=${dicts[_${key_value}_active]}
             xlogger_debug $xdict_file_name $LINENO "active[ $key ] = $xdict_active"
             if [[ "$xdict_active" != "False" ]]; then
-                echo -n "${xdict_key_value} "
+                xlogger_debug $xdict_file_name $LINENO "get one sub command : ${key_value}"
+                echo -n "${key_value} "
             fi
         done
         return
     fi
     for i in $(seq 1 $max_cmds_per_level); do
-        local key="${parent_cmd}_name_$i"
-        local key_value=${dicts["$key"]}
-        local xdict_active=${dicts["${parent_cmd}_${key_value}_active"]}
+        key="${parent_cmd}_name_$i"
+        key_value=${dicts[$key]}
+        xdict_active=${dicts[${parent_cmd}_${key_value}_active]}
         xlogger_debug $xdict_file_name $LINENO "find $key : $key_value"
         xlogger_debug $xdict_file_name $LINENO "active[ $key_value ] = $xdict_active"
         if [[ -z "$key_value" ]]; then
@@ -468,10 +490,14 @@ function xdict_get_sub_cmd_list()
 
 function xdict_get_cmd_list()
 {
-    local xdict_cmds xdict_cmds_num xdict_sub_cmd
+    local i xdict_cmds xdict_cmds_num xdict_sub_cmd
     local xdict_cmd xdict_cmd_list xdict_prev_cmd_list xdict_sub_cmd_num
 
-    xdict_cmds=($1)
+    xdict_cmds=()
+    for i in $@
+    do
+        xdict_cmds+=($i)
+    done
     xdict_cmds_num=${#xdict_cmds[@]}
     xdict_sub_cmd=""
     xdict_cmd=""
@@ -506,31 +532,36 @@ function xdict_get_cmd_list()
 
 function xdict_get_action()
 {
-    local xdict_cmds xdict_cmds_num xdict_action_key xdict_action
+    local i j xdict_cmds xdict_cmds_num xdict_action_key xdict_action
 
-    xdict_cmds=($1)
+    xdict_cmds=()
+    for i in $@
+    do
+        xdict_cmds+=($i)
+    done
     xdict_cmds_num=${#xdict_cmds[@]}
     xdict_action_key=""
     xdict_action=""
 
     if [[ $xdict_cmds_num -eq 0 ]]; then
         echo ""
-        return -1
+        return
     fi
-    #for(( i=0;i<$((xdict_cmds_num-1));i++ ))
-    for i in $(seq 1 $((xdict_cmds_num-1)))
+    local range_start range_end
+    range_start=$((x_inc_index+1))
+    range_end=$((xdict_cmds_num-x_sub_index))
+    for j in $(seq $range_start $range_end)
     do
-        xdict_action_key="${xdict_action_key}_${xdict_cmds[$((i-1))]}_sub_cmds"
+        xdict_action_key="${xdict_action_key}_${xdict_cmds[$((j-1))]}_sub_cmds"
     done
-    xdict_action_key="${xdict_action_key}_${xdict_cmds[$((xdict_cmds_num-1))]}_action"
-    xdict_action=${dicts["$xdict_action_key"]}
+    xdict_action_key="${xdict_action_key}_${xdict_cmds[$((xdict_cmds_num-x_sub_index))]}_action"
+    xdict_action=${dicts[$xdict_action_key]}
     xlogger_debug $xdict_file_name $LINENO "action is $xdict_action_key : $xdict_action"
     echo $xdict_action
-    return 0
 }
 
 dict_files=(`find $x_real_dir/dicts/ -name "*.dict"`)
-xlogger_info $xdict_file_name $LINENO "find dict files : ${dict_files[@]}"
+xlogger_debug $xdict_file_name $LINENO "find dict files : ${dict_files[@]}"
 for dict_file in ${dict_files[@]}
 do
     #date_echo "one dict is $dict_file"
@@ -551,16 +582,24 @@ do
     fi
 done
 
-:<<'COMMENT'
 for key in $(seq 1 $((dicts_root_key-1))); do
-    xlogger_debug $xdict_file_name $LINENO "root : { $key, ${dicts["$key"]} }"
+    xlogger_debug $xdict_file_name $LINENO "root : { $key, ${dicts[$key]} }"
 done
-for key in $(echo ${!dicts[*]}); do
-    if [[ ! "$key" =~ ^[0-9]+$ ]]; then
-        xlogger_debug $xdict_file_name $LINENO "{ $key, ${dicts["$key"]} }"
-    fi
-done
+if [[ $x_is_zsh -eq 1 ]]; then
+    for key in ${(k)dicts}; do
+        if [[ ! "$key" =~ ^[0-9]+$ ]]; then
+            xlogger_debug $xdict_file_name $LINENO "{ $key, ${dicts[$key]} }"
+        fi
+    done
+else
+    for key in $(echo ${!dicts[@]}); do
+        if [[ ! "$key" =~ ^[0-9]+$ ]]; then
+            xlogger_debug $xdict_file_name $LINENO "{ $key, ${dicts[$key]} }"
+        fi
+    done
+fi
 
+:<<'COMMENT'
 echo -e "\ntotal parse $? xdict from xdict.def\n"
 
 #xdict_parse "$xssh_string"

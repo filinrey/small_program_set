@@ -1,27 +1,27 @@
-#xtest_action = {
+xtest_action = {
     'name': 'test',
-    'active': False,
+    'active': True,
     'sub_cmds': [
         {
-            'name': 'first',
+            'name': 'ssh',
             'sub_cmds': [
                 {
-                    'name': 'second',
-                    'action': second_action,
+                    'name': 'login',
+                    'action': login_action,
                 },
                 {
-                    'name': 'third',
-                    'action': third_action,
+                    'name': 'remove',
+                    'action': remove_action,
                 },
             ],
 
         },
         {
-            'name': 'sprint',
+            'name': 'cd',
             'sub_cmds': [
                 {
-                    'name': 'summer',
-                    'action': summer_action,
+                    'name': 'install',
+                    'action': install_action,
                 },
             ],
         },

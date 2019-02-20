@@ -67,20 +67,24 @@ function get_key()
 function handle_enter_key()
 {
     local cmds cmds_num
-    cmds=(${input_cmd})
+    if [[ $x_is_zsh -eq 1 ]]; then
+        cmds=(${(s: :)input_cmd})
+    else
+        cmds=($input_cmd)
+    fi
     cmds_num=${#cmds[@]}
     if [[ $cmds_num == 0 ]]; then
         echo ""
         return
     fi
     local cmd_list cmd_deep cmd_action
-    cmd_list=(`xdict_get_cmd_list "${cmds[*]}"`)
+    cmd_list=(`xdict_get_cmd_list "${cmds[@]}"`)
     cmd_deep=$?
-    cmd_action=`xdict_get_action "${cmds[*]:0:$cmd_deep}"`
+    cmd_action=`xdict_get_action "${cmds[@]:0:$cmd_deep}"`
     if [[ -n "$cmd_action" ]]; then
         store_cmd "$input_cmd"
         xlogger_debug $main_file_name $LINENO "run action : $cmd_action"
-        $cmd_action $x_key_enter "${cmds[*]:$cmd_deep}"
+        $cmd_action $x_key_enter "${cmds[@]:$cmd_deep}"
         input_cmd=""
         let cur_pos=0
     else
@@ -100,19 +104,25 @@ function handle_space_key()
         return -1
     fi
 
-    cmds=($new_input_cmd)
+    if [[ $x_is_zsh -eq 1 ]]; then
+        cmds=(${(s: :)new_input_cmd})
+    else
+        cmds=($new_input_cmd)
+    fi
     cmds_num=${#cmds[@]}
-    cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$((cmds_num-1))}"`)
+    xlogger_debug $main_file_name $LINENO "cmds_num = $cmds_num, [0] = ${cmds[1]}, [1] = ${cmds[2]}"
+    cmd_list=(`xdict_get_cmd_list "${cmds[@]:0:$((cmds_num-1))}"`)
     cmd_deep=$?
-    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmd_deep-1))]} from ${cmd_list[@]}"
-    new_sub_cmd=`get_max_same_string "${cmds[$((cmd_deep-1))]}" "${cmd_list[*]}"`
+    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmd_deep-x_sub_index))]} from ${cmd_list[@]}"
+    new_sub_cmd=`get_max_same_string "${cmds[$((cmd_deep-x_sub_index))]}" "${cmd_list[*]}"`
     result=$?
-    if [[ "$new_sub_cmd" != "${cmds[$((cmd_deep-1))]}" && "$new_input_cmd" =~ ^.*\ $ ]]; then
-        echo -e "\n\tno \"${cmds[$((cmd_deep-1))]}\" command"
+    #if [[ "$new_sub_cmd" != "${cmds[$((cmd_deep-x_sub_index))]}" && "$new_input_cmd" =~ ^.*\ $ ]]; then
+    if [[ "$new_sub_cmd" != "${cmds[$((cmd_deep-x_sub_index))]}" ]]; then
+        echo -e "\n\tno \"${cmds[$((cmd_deep-x_sub_index))]}\" command"
         return -1
     fi
     if [[ $result == 0 ]]; then
-        echo -e "\n\tno \"${cmds[$((cmd_deep-1))]}\" command"
+        echo -e "\n\tno \"${cmds[$((cmd_deep-x_sub_index))]}\" command"
         return -1
     fi
     input_cmd=$new_input_cmd
@@ -122,32 +132,36 @@ function handle_space_key()
 function handle_tab_key()
 {
     local cmds cmds_num used_cmds_num
-    cmds=(${input_cmd})
+    if [[ $x_is_zsh -eq 1 ]]; then
+        cmds=(${(s: :)input_cmd})
+    else
+        cmds=($input_cmd)
+    fi
     cmds_num=${#cmds[@]}
     used_cmds_num=$cmds_num
     if [[ $cmds_num == 0 ]]; then
-        cmds[$cmds_num]=""
+        cmds[$((cmds_num+x_inc_index))]=""
         let cmds_num=cmds_num+1
     elif [[ "$input_cmd" =~ ^.+\ $ ]]; then
-        cmds[$cmds_num]=""
+        cmds[$((cmds_num+x_inc_index))]=""
         let cmds_num=cmds_num+1
     else
         if [[ $used_cmds_num -gt 0 ]]; then
             let used_cmds_num=used_cmds_num-1
         fi
     fi
-    local cmd_list cmd_deep
-    xlogger_debug $main_file_name $LINENO "cmds_num = $cmds_num, cmds = ${cmds[@]}"
-    cmd_list=(`xdict_get_cmd_list "${cmds[*]:0:$used_cmds_num}"`)
+    local cmd_list cmd_deep new_sub_cmd
+    xlogger_debug $main_file_name $LINENO "cmds_num = $cmds_num, cmds = ${cmds[@]}, used_cmds_num = $used_cmds_num, param = ${cmds[@]:0:$used_cmds_num}"
+    cmd_list=(`xdict_get_cmd_list "${cmds[@]:0:$used_cmds_num}"`)
     cmd_deep=$?
-    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-1))]} from ${cmd_list[@]}"
-    local new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-1))]}" "${cmd_list[*]}"`
+    xlogger_debug $main_file_name $LINENO "get_max_same_string for ${cmds[$((cmds_num-x_sub_index))]} from ${cmd_list[@]}"
+    new_sub_cmd=`get_max_same_string "${cmds[$((cmds_num-x_sub_index))]}" "${cmd_list[*]}"`
 
     if [[ ${#input_cmd} -gt 0 && $cmds_num -gt $cmd_deep ]]; then
-        local cmd_action=`xdict_get_action "${cmds[*]:0:$cmd_deep}"`
+        local cmd_action=`xdict_get_action "${cmds[@]:0:$cmd_deep}"`
         if [[ -n "$cmd_action" ]]; then
             xlogger_debug $main_file_name $LINENO "run action : $cmd_action"
-            $cmd_action $x_key_tab "${cmds[*]:$cmd_deep}"
+            $cmd_action $x_key_tab "${cmds[@]:$cmd_deep}"
             return
         fi
     fi
@@ -162,7 +176,7 @@ function handle_tab_key()
 
     local new_input_cmd=""
     local i
-    for i in $(seq 1 $((cmds_num-1)))
+    for i in $(seq $((x_inc_index+1)) $((cmds_num-x_sub_index)))
     do
         new_input_cmd=$new_input_cmd${cmds[$((i-1))]}" "
     done
@@ -267,10 +281,10 @@ prefix_show=""
 initial_end_time=`date +%s`
 echo -ne "$((initial_end_time-initial_start_time)) second\n"
 
-if [[ `env | grep SHELL` =~ "zsh" ]]; then
-    date_echo "don't support zsh"
-    let x_stop=1
-fi
+#if [[ `env | grep SHELL` =~ "zsh" ]]; then
+#    date_echo "don't support zsh"
+#    let x_stop=1
+#fi
 
 while [ 1 ]
 do

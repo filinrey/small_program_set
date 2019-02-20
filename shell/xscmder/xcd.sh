@@ -19,7 +19,7 @@ function show_cd_history()
 {
     local xcd_name_prefix=$1
     xcd_match_name_list=()
-    xcd_match_name_num=0
+    xcd_match_name_num=$x_inc_index
 
     local file_size=`stat -c %s $x_cd_history`
     xlogger_debug $xcd_file_name $LINENO "cd_history size is $file_size"
@@ -35,8 +35,8 @@ function show_cd_history()
 
     local is_first_print=1
     local line item new_line colors color_index
-    colors[0]="blue_u"
-    colors[1]="green_u"
+    colors[$x_inc_index]="blue_u"
+    colors[$((x_inc_index+1))]="green_u"
     color_index=0
     BACK_IFS=$IFS
     IFS=""
@@ -49,19 +49,19 @@ function show_cd_history()
         if [[ ${#item[@]} != 2 ]]; then
             continue
         fi
-        xlogger_debug $xcd_file_name $LINENO "compare ${item[0]} with $xcd_name_prefix"
-        if [[ ! "${item[0]}" =~ ^$xcd_name_prefix.*$ ]]; then
+        xlogger_debug $xcd_file_name $LINENO "compare ${item[$x_inc_index]} with $xcd_name_prefix"
+        if [[ ! "${item[$x_inc_index]}" =~ ^$xcd_name_prefix.*$ ]]; then
             continue
         fi
         if [[ $is_first_print == 1 ]]; then
             let is_first_print=0
             echo -ne "\n"
         fi
-        local name_length=${#item[0]}
-        format_color_string "${item[0]}" "${colors[$color_index]}"
+        local name_length=${#item[$x_inc_index]}
+        format_color_string "${item[$x_inc_index]}" "${colors[$((color_index+x_inc_index))]}"
         let color_index=$(((color_index+1)%2))
-        echo -e "\t$color_string${empty_item:0:$((max_name_length-name_length))} : ${item[1]}"
-        xcd_match_name_list[$xcd_match_name_num]="${item[0]}"
+        echo -e "\t$color_string${empty_item:0:$((max_name_length-name_length))} : ${item[$((x_inc_index+1))]}"
+        xcd_match_name_list[$xcd_match_name_num]="${item[$x_inc_index]}"
         let xcd_match_name_num=xcd_match_name_num+1
     done < $x_cd_history
     IFS=$BACK_IFS
@@ -82,8 +82,8 @@ function get_cd_detail()
         if [[ ${#item[@]} != 2 ]]; then
             continue
         fi
-        if [[ "${item[0]}" == "$xcd_name" ]]; then
-            echo "${item[1]}"
+        if [[ "${item[$x_inc_index]}" == "$xcd_name" ]]; then
+            echo "${item[$((x_inc_index+1))]}"
             break
         fi
     done < $x_cd_history
@@ -115,9 +115,9 @@ function store_cd_history()
         if [[ ${#item[@]} != 2 ]]; then
             continue
         fi
-        if [[ "${item[0]}" == "$xcd_name" ]]; then
+        if [[ "${item[$x_inc_index]}" == "$xcd_name" ]]; then
             let is_insert=1
-            new_line="${item[0]}    ${item[1]}"
+            new_line="${item[$x_inc_index]}    ${item[$((x_inc_index+1))]}"
         else
             new_line="$line"
         fi
@@ -154,7 +154,7 @@ function remove_cd_history()
         if [[ ${#item[@]} -eq 0 ]]; then
             continue
         fi
-        if [[ "${item[0]}" != "$xcd_name" ]]; then
+        if [[ "${item[$x_inc_index]}" != "$xcd_name" ]]; then
             echo "$line" >> $temp_cd_history
         else
             let is_remove=1
@@ -175,7 +175,7 @@ function show_dirs()
     local xcd_real_path=""
     local xcd_dir_prefix=""
     xcd_match_dir_list=()
-    xcd_match_dir_num=0
+    xcd_match_dir_num=$x_inc_index
 
     if [[ "$xcd_path" =~ ^/ ]]; then
         xcd_real_path=`dirname "$xcd_path."`
@@ -188,13 +188,16 @@ function show_dirs()
     if [[ ! -d "$xcd_real_path" ]]; then
         return
     fi
-    xcd_real_path="$xcd_real_path/"
+    if [[ "$xcd_real_path" != "/" ]]; then
+        xcd_real_path="$xcd_real_path/"
+    fi
     xlogger_debug $xcd_file_name $LINENO "cur cd dir = $xcd_real_path, prefix = $xcd_dir_prefix"
     local xcd_dirs xcd_dirs_num xcd_sed_real_path
     xcd_sed_real_path=`echo "$xcd_real_path" | sed "s/\//=\//g"`
     xcd_sed_real_path=`echo "$xcd_sed_real_path" | sed "s/=/\x5c/g"`
     xcd_dirs=(`ls -d $xcd_real_path*/ 2>/dev/null | sed -r "s/^$xcd_sed_real_path(.+)$/\1/"`)
     xcd_dirs_num=${#xcd_dirs[@]}
+    xlogger_debug $xcd_file_name $LINENO "dirs_num = $xcd_dirs_num, [0] = ${xcd_dirs[1]}"
     if [[ $xcd_dirs_num == 0 ]]; then
         echo -e "\n\t$xcd_path is not exist, or permission denied"
         return
@@ -243,14 +246,17 @@ function show_dirs()
 
 function action_xcd()
 {
-    local xcd_key=$1
-    local xcd_cmds=($2)
-    local xcd_cmds_num=${#xcd_cmds[@]}
+    local xcd_key xcd_cmds xcd_cmds_num xcd_para_num
+    xcd_para_num=$#
+    xcd_key=$1
+    xcd_cmds=(${@:2:$((xcd_para_num-1))})
+    xcd_cmds_num=${#xcd_cmds[@]}
+    xlogger_info $xcd_file_name $LINENO "cmds_num = $xcd_cmds_num, cmds = ${xcd_cmds[@]}"
 
     if [[ $xcd_key == $x_key_tab && $xcd_cmds_num -le 1 ]]; then
         local cd_name_prefix=""
         if [[ $xcd_cmds_num == 1 ]]; then
-            cd_name_prefix=${xcd_cmds[0]}
+            cd_name_prefix=${xcd_cmds[$x_inc_index]}
         fi
         xlogger_debug $xcd_file_name $LINENO "show history with $cd_name_prefix"
         show_cd_history $cd_name_prefix
@@ -269,32 +275,32 @@ function action_xcd()
     fi
 
     if [[ $xcd_key == $x_key_tab && $xcd_cmds_num -eq 2 ]]; then
-        show_dirs ${xcd_cmds[1]}
+        show_dirs ${xcd_cmds[$((x_inc_index+1))]}
         return
     fi
 
     if [[ $xcd_key == $x_key_enter && ${#xcd_cmds[@]} == 1 ]]; then
-        local xcd_path=`get_cd_detail ${xcd_cmds[0]}`
+        local xcd_path=`get_cd_detail ${xcd_cmds[$x_inc_index]}`
         if [[ -n "$xcd_path" ]]; then
             cd $xcd_path
             let x_stop=1
         else
-            echo -e "\n\tno path named \"${xcd_cmds[0]}\""
+            echo -e "\n\tno path named \"${xcd_cmds[$x_inc_index]}\""
         fi
         return
     fi
 
     if [[ $xcd_key == $x_key_enter && ${#xcd_cmds[@]} == 2 ]]; then
-        if [[ "${xcd_cmds[1]}" == "-" ]]; then
-            remove_cd_history "${xcd_cmds[0]}"
+        if [[ "${xcd_cmds[$((x_inc_index+1))]}" == "-" ]]; then
+            remove_cd_history "${xcd_cmds[$x_inc_index]}"
             return
         fi
-        if [[ ! -d "${xcd_cmds[1]}" ]]; then
-            echo -e "\n\t\"${xcd_cmds[1]}\" is not exist"
+        if [[ ! -d "${xcd_cmds[$((x_inc_index+1))]}" ]]; then
+            echo -e "\n\t\"${xcd_cmds[$((x_inc_index+1))]}\" is not exist"
             return
         fi
-        store_cd_history ${xcd_cmds[0]} ${xcd_cmds[1]}
-        cd ${xcd_cmds[1]}
+        store_cd_history ${xcd_cmds[$x_inc_index]} ${xcd_cmds[$((x_inc_index+1))]}
+        cd ${xcd_cmds[$((x_inc_index+1))]}
         let x_stop=1
         return
     fi

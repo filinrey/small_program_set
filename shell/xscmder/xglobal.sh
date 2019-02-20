@@ -1,8 +1,13 @@
 #!/usr/bin/bash
 
-is_zsh=0
-if [[ `env | grep SHELL` =~ "zsh" ]]; then
-    is_zsh=1
+x_is_zsh=0
+x_inc_index=0
+x_sub_index=1
+x_shell_string=`ps -p $$`
+if [[ ${x_shell_string##*\ } =~ "zsh" ]]; then
+    x_is_zsh=1
+    x_inc_index=1
+    x_sub_index=0
 fi
 
 x_cur_file_name=`basename $0`

@@ -41,6 +41,8 @@ class XConst(object):
     CMD_HISTORY_FILE = CONFIG_DIR + 'cmd_history'
     MAX_NUM_CMD_HISTORY = 20
 
+    MAX_DIR_DEPTH = 7
+
 
 class XPrintStyle(object):
     # color print style: \033[mode;foreground;backgroundm + output + \033[0m

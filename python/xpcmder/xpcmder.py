@@ -17,6 +17,7 @@ from xprint import xprint_new_line, xprint_head
 from xcommon import get_max_same_string
 from xrun import xrun_action
 from xinstall import xinstall_action
+from xlines import xlines_action
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -35,6 +36,7 @@ ACTION_LIST = {
         xexit_action,
         xrun_action,
         xinstall_action,
+        xlines_action,
     ]
 }
 

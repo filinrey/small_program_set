@@ -1,0 +1,10 @@
+_name_2=test
+_test_active=True
+_test_sub_cmds_name_1=ssh
+_test_sub_cmds_ssh_sub_cmds_name_1=login
+_test_sub_cmds_ssh_sub_cmds_login_action=login_action
+_test_sub_cmds_ssh_sub_cmds_name_2=remove
+_test_sub_cmds_ssh_sub_cmds_remove_action=remove_action
+_test_sub_cmds_name_2=cd
+_test_sub_cmds_cd_sub_cmds_name_1=install
+_test_sub_cmds_cd_sub_cmds_install_action=install_action

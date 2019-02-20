@@ -443,7 +443,7 @@ function xdict_parse_from_file()
         if [[ $segment_index == $((x_inc_index-1)) && $is_dict == 1 && $segment_flag == 1 ]]; then
             #echo "dict_string : $xdict_string"
             #echo -e "############  whole dict ############\n"
-            echo -e "\n"
+            #echo -e "\n"
             xdict_parse "$xdict_string" "$def_file"
             if [[ $? == 0 ]]; then
                 let xdict_num=xdict_num+1
@@ -560,7 +560,7 @@ function xdict_get_action()
     echo $xdict_action
 }
 
-dict_files=(`find $x_real_dir/dicts/ -name "*.dict"`)
+dict_files=(`find $x_real_dir/dicts/ -name "*.dict" 2>/dev/null`)
 xlogger_debug $xdict_file_name $LINENO "find dict files : ${dict_files[@]}"
 for dict_file in ${dict_files[@]}
 do

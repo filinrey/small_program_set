@@ -5,7 +5,7 @@ import os
 import re
 from xdefine import XKey, XConst, XPrintStyle
 from xlogger import xlogger
-from xprint import xprint_new_line, xprint_head, xprint_same_line, xprint
+from xprint import xprint_new_line, xprint_head, format_color_string
 
 
 def show_lines_help():
@@ -45,13 +45,78 @@ def dir_lines_statistic(match_list, match_map):
                 dir_name = os.path.dirname(dir_name)
 
 
-def show_lines_statistic(match_list, match_map, max_path_length):
-    for item in match_list:
+def format_tree_line(is_brother_list):
+    print_line =''
+    for item in is_brother_list:
+        is_brother = item['is_brother']
+        if is_brother:
+            print_line = print_line + '|' + ' ' * 3
+        else:
+            print_line = print_line + ' ' + ' ' * 3
+    print_line = print_line + '|-- '
+    return print_line
+
+
+def remove_brother(is_brother_list, depth):
+    circle_count = len(is_brother_list)
+    index = 0
+    while circle_count:
+        if is_brother_list[index]['depth'] >= depth:
+            del is_brother_list[index]
+        else:
+            index += 1
+        circle_count -= 1
+
+
+def tree_lines_statistic(match_list, match_map):
+    depth = match_list[0]['depth']
+    match_list[0]['print'] = ''
+    match_list[0]['is_brother'] = 0
+    is_brother_list = []
+    is_brother_list.append({'index': 0, 'depth': depth})
+    for index, item in enumerate(match_list[1:]):
+        depth = item['depth']
         path = item['path']
+        for i in range(len(is_brother_list)):
+            if depth == match_list[is_brother_list[i]['index']]['depth']:
+                match_list[is_brother_list[i]['index']]['is_brother'] = 1
+        remove_brother(is_brother_list, depth)
+        if os.path.isdir(path):
+            is_brother_list.append({'index': index + 1, 'depth': depth})
+        match_list[index + 1]['is_brother'] = 0
+
+    is_brother_list = []
+    for index, item in enumerate(match_list[1:]):
+        path = item['path']
+        depth = item['depth']
+        remove_brother(is_brother_list, depth)
+        print_line = format_tree_line(is_brother_list) + os.path.basename(item['path'])
+        item['print'] = print_line
+        is_brother = item['is_brother']
+        if os.path.isdir(path):
+            is_brother_list.append({'index': index + 1, 'depth': depth, 'is_brother': is_brother})
+
+
+def show_lines_statistic(match_list, match_map, max_line_length):
+    print_line = 'FILE' + ' ' * (max_line_length - len('FILE')) + '    ' + 'LINES' + ' ' * (10 - len('LINES')) + '    DEPTH'
+    xprint_head(print_line + '\n')
+    path = match_list[0]['path']
+    print_line = path + ' ' * (max_line_length - len(path)) + '    '
+    print_line = print_line + str(match_map[path]) + ' ' * (10 - len(str(match_map[path])))
+    print_line = print_line + '    1'
+    xprint_head(format_color_string(print_line, XPrintStyle.GREEN_U))
+    for item in match_list[1:]:
+        path = item['path']
+        print_line = item['print']
+        print_line = print_line + ' ' * (max_line_length - len(print_line)) + '    '
         if os.path.isfile(path):
-            xprint_head(path + ' '*(max_path_length - len(path)) + '\t' + str(item['lines']))
+            print_line = print_line + str(item['lines']) + ' ' * (10 - len(str(item['lines'])))
         elif os.path.isdir(path):
-            xprint_head(path + ' '*(max_path_length - len(path)) + '\t' + str(match_map[path]))
+            print_line = print_line + str(match_map[path]) + ' ' * (10 - len(str(match_map[path])))
+        print_line = print_line + '    ' + str(item['depth'])
+        if os.path.isdir(path):
+            print_line = format_color_string(print_line, XPrintStyle.BLUE)
+        xprint_head(print_line)
 
 
 def lines_statistic(lines_dir, lines_level, lines_black, lines_white):
@@ -64,6 +129,8 @@ def lines_statistic(lines_dir, lines_level, lines_black, lines_white):
     new_dir = ''
     new_path = ''
     dir_depth = 1
+    new_depth = dir_depth
+    max_depth = 1
     max_path_length = 0
     match_list = []
     match_map = {}
@@ -78,8 +145,12 @@ def lines_statistic(lines_dir, lines_level, lines_black, lines_white):
             if new_dir:
                 dir_depth = new_dir.count('/') + 2
             new_path = lines_dir + new_dir
+            new_depth = dir_depth
         else:
             new_path = lines_dir + new_dir + '/' + new_line
+            new_depth = dir_depth + 1
+        if new_depth > max_depth:
+            max_depth = new_depth
         new_path = new_path.replace('//', '/')
         if lines_black and re.search(lines_black, new_path):
             continue
@@ -92,13 +163,15 @@ def lines_statistic(lines_dir, lines_level, lines_black, lines_white):
             line_f = os.popen('wc -l ' + new_path)
             line_num = int(line_f.readline().strip().split()[0])
             line_f.close()
-        xprint_head(new_path)
-        if not match_map.has_key(new_path):
-            match_map[new_path] = line_num
-            match_list.append({'path': new_path, 'lines': line_num})
+        if os.path.isfile(new_path) or re.match('^.+:$', new_line):
+            #xprint_head(new_path)
+            if not match_map.has_key(new_path):
+                match_map[new_path] = line_num
+                match_list.append({'path': new_path, 'lines': line_num, 'depth': new_depth})
     f.close()
     dir_lines_statistic(match_list, match_map)
-    show_lines_statistic(match_list, match_map, max_path_length)
+    tree_lines_statistic(match_list, match_map)
+    show_lines_statistic(match_list, match_map, max_path_length + (max_depth - 1) * 4)
 
 
 def action_lines(cmds, key):
@@ -127,7 +200,7 @@ def action_lines(cmds, key):
         if re.match('^w-', cmds[2]):
             lines_white = cmds[2][2:]
     if key == XKey.ENTER and num_cmd <= 3:
-        xprint_new_line('\tcalculating')
+        xprint_new_line()
         lines_statistic(lines_dir, lines_level, lines_black, lines_white)
         return {'flag': True, 'new_input_cmd': ''}
 

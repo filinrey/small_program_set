@@ -36,11 +36,11 @@ def dir_lines_statistic(match_list, match_map):
         if os.path.isfile(path):
             dir_name = os.path.dirname(path)
             while dir_name:
-                if dir_name == '.':
-                    dir_name = './'
+                if dir_name == '.' or dir_name == '..':
+                    dir_name = dir_name + '/'
                 if match_map.has_key(dir_name):
                     match_map[dir_name] += item['lines']
-                if dir_name == './' or dir_name == '/':
+                if dir_name == './' or dir_name == '/' or dir_name == '../':
                     break
                 dir_name = os.path.dirname(dir_name)
 
@@ -103,7 +103,7 @@ def show_lines_statistic(match_list, match_map, max_line_length):
     path = match_list[0]['path']
     print_line = path + ' ' * (max_line_length - len(path)) + '    '
     print_line = print_line + str(match_map[path]) + ' ' * (10 - len(str(match_map[path])))
-    print_line = print_line + '    1'
+    print_line = print_line + '    ' + str(match_list[0]['depth'])
     xprint_head(format_color_string(print_line, XPrintStyle.GREEN_U))
     for item in match_list[1:]:
         path = item['path']
@@ -119,6 +119,44 @@ def show_lines_statistic(match_list, match_map, max_line_length):
         xprint_head(print_line)
 
 
+def add_item(line, path, depth, path_list, path_map, min_depth, max_depth):
+    line_num = 0
+    if os.path.isfile(path):
+        line_f = os.popen('wc -l ' + path)
+        line_num = int(line_f.readline().strip().split()[0])
+        line_f.close()
+    if os.path.isfile(path) or re.match('^.+:$', line):
+        #xprint_head(path)
+        if not (path == './' or path == '/' or path == '../'):
+            dir_name = os.path.dirname(path)
+            dir_depth = depth - 1
+            dir_list = []
+            while dir_name:
+                if dir_name == '.' or dir_name == '..':
+                    dir_name = dir_name + '/'
+                if not path_map.has_key(dir_name):
+                    dir_list.insert(0, {'path': dir_name, 'lines': line_num, 'depth': dir_depth})
+                    if dir_depth < min_depth:
+                        min_depth = dir_depth
+                    if dir_depth > max_depth:
+                        max_depth = dir_depth
+                if dir_name == './' or dir_name == '/' or dir_name == '../':
+                    break
+                dir_name = os.path.dirname(dir_name)
+                dir_depth = dir_depth - 1
+            for item in dir_list:
+                if not path_map.has_key(item['path']):
+                    path_map[item['path']] = 0
+                    path_list.append({'path': item['path'], 'lines': item['lines'], 'depth': item['depth']})
+                    #xprint_head('add dir = ' + item['path'] + ' to list')
+        if not path_map.has_key(path):
+            path_map[path] = line_num
+            path_list.append({'path': path, 'lines': line_num, 'depth': depth})
+            #xprint_head('add path = ' + path + ' to list')
+
+    return min_depth, max_depth
+
+
 def lines_statistic(lines_dir, lines_level, lines_black, lines_white):
     f = os.popen('ls -R ' + lines_dir + ' | wc -L')
     max_item_length = int(f.readline().strip())
@@ -130,6 +168,7 @@ def lines_statistic(lines_dir, lines_level, lines_black, lines_white):
     new_path = ''
     dir_depth = 1
     new_depth = dir_depth
+    min_depth = 1
     max_depth = 1
     max_path_length = 0
     match_list = []
@@ -151,27 +190,32 @@ def lines_statistic(lines_dir, lines_level, lines_black, lines_white):
             new_depth = dir_depth + 1
         if new_depth > max_depth:
             max_depth = new_depth
+        if new_depth < min_depth:
+            min_depth = new_depth
         new_path = new_path.replace('//', '/')
         if lines_black and re.search(lines_black, new_path):
             continue
         if lines_white and not re.search(lines_white, new_path):
             continue
-        if max_path_length < len(new_path):
-            max_path_length = len(new_path)
+        if max_path_length < len(os.path.basename(new_path)):
+            max_path_length = len(os.path.basename(new_path))
         line_num = 0
+        min_depth, max_depth = add_item(new_line, new_path, new_depth, match_list, match_map, min_depth, max_depth)
+        '''
         if os.path.isfile(new_path):
             line_f = os.popen('wc -l ' + new_path)
             line_num = int(line_f.readline().strip().split()[0])
             line_f.close()
         if os.path.isfile(new_path) or re.match('^.+:$', new_line):
-            #xprint_head(new_path)
+            xprint_head(new_path)
             if not match_map.has_key(new_path):
                 match_map[new_path] = line_num
                 match_list.append({'path': new_path, 'lines': line_num, 'depth': new_depth})
+        '''
     f.close()
     dir_lines_statistic(match_list, match_map)
     tree_lines_statistic(match_list, match_map)
-    show_lines_statistic(match_list, match_map, max_path_length + (max_depth - 1) * 4)
+    show_lines_statistic(match_list, match_map, max_path_length + (max_depth - min_depth) * 4)
 
 
 def action_lines(cmds, key):
@@ -190,6 +234,9 @@ def action_lines(cmds, key):
             return {'flag': True, 'new_input_cmd': ''}
         lines_dir = cmds[0]
     if num_cmd >= 2 and cmds[1] != '-' and key == XKey.ENTER:
+        if not re.match('^[0-9]+$', cmds[1]):
+            xprint_new_line('\tDEPTH should be number, ' + cmds[1] + ' is wrong')
+            return {'flag': True, 'new_input_cmd': ''}
         if int(cmds[1]) >= XConst.MAX_DIR_DEPTH or int(cmds[1]) < 1:
             xprint_new_line('\tDEPTH ' + cmds[1] + ' is wrong')
             return {'flag': True, 'new_input_cmd': ''}

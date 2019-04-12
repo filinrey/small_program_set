@@ -18,6 +18,7 @@ from xcommon import get_max_same_string
 from xrun import xrun_action
 from xinstall import xinstall_action
 from xlines import xlines_action
+from xgnb import xgnb_action
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -37,6 +38,7 @@ ACTION_LIST = {
         xrun_action,
         xinstall_action,
         xlines_action,
+        xgnb_action,
     ]
 }
 

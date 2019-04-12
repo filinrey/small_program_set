@@ -43,6 +43,8 @@ class XConst(object):
 
     MAX_DIR_DEPTH = 7
 
+    CPRT_SDK_SHELL = '/cplane/CP-RT/buildscript/CP-RT/prepare_sdk.sh'
+
 
 class XPrintStyle(object):
     # color print style: \033[mode;foreground;backgroundm + output + \033[0m

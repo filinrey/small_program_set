@@ -44,6 +44,7 @@ class XConst(object):
     MAX_DIR_DEPTH = 7
 
     CPRT_SDK_SHELL = '/cplane/CP-RT/buildscript/CP-RT/prepare_sdk.sh'
+    CU_SDK_SHELL = '/cplane/cu/scripts/prepare_sdk.sh'
 
 
 class XPrintStyle(object):

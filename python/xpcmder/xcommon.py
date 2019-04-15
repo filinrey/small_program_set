@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import re
 
 
@@ -27,5 +28,17 @@ def get_max_same_string(pattern, string_list):
         if break_flag:
             break
         max_same_string = max_same_string + match_strings[0][i]
-    
+
     return (max_same_string, True)
+
+
+def get_gnb_dirs(gnb_type):
+    f = os.popen('git worktree list 2>&1')
+    line = f.readline().strip()
+    f.close()
+    if re.match('fatal', line):
+        return '', '', ''
+    repo_dir = line.split()[0]
+    sdk5g_dir = repo_dir + '/../' + gnb_type + '_sdk5g'
+    build_dir = repo_dir + '/../' + gnb_type + '_build'
+    return repo_dir, sdk5g_dir, build_dir

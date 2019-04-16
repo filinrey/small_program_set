@@ -46,6 +46,7 @@ class XConst(object):
     CPRT_SDK_SHELL = '/cplane/CP-RT/buildscript/CP-RT/prepare_sdk.sh'
     CU_SDK_SHELL = '/cplane/cu/scripts/prepare_sdk.sh'
     CPNRT_SDK_SHELL = '/cplane/CP-NRT/buildscript/CP-NRT/prepare_sdk.sh'
+    CLANG_FORMAT = '/usr/bin/clang-format'
 
 
 class XPrintStyle(object):

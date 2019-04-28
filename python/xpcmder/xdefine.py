@@ -43,10 +43,11 @@ class XConst(object):
 
     MAX_DIR_DEPTH = 7
 
-    CPRT_SDK_SHELL = '/cplane/CP-RT/buildscript/CP-RT/prepare_sdk.sh'
+    CPRT_SDK_SHELL = '/cplane/CP-RT/buildscript/CP-RT/prepare_sdk.sh $(./cplane/CP-RT/buildscript/CP-RT/list_dependencies.sh all)'
     CU_SDK_SHELL = '/cplane/cu/scripts/prepare_sdk.sh'
     CPNRT_SDK_SHELL = '/cplane/CP-NRT/buildscript/CP-NRT/prepare_sdk.sh'
     CLANG_FORMAT = '/usr/bin/clang-format'
+    GNB_REPO = 'ssh://fenghxu@gerrit.ext.net.nokia.com:29418/MN/5G/NB/gnb.git'
 
 
 class XPrintStyle(object):

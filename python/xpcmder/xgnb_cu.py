@@ -31,6 +31,7 @@ def action_gnb_cu_sdk(cmds, key):
             return {'flag': True, 'new_input_cmd': ''}
         system_cmd = 'export SDK5G_DIR=' + sdk5g_dir + ' && '
         system_cmd += repo_dir + '/' + XConst.CU_SDK_SHELL + ' -t all'
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -67,6 +68,7 @@ def action_gnb_cu_build(cmds, key):
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'cmake ../gnb/cplane && '
         system_cmd += 'make -j$(nproc)'
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -107,6 +109,7 @@ def action_gnb_cu_ut(cmds, key):
         system_cmd += 'make ut'
         if num_cmd == 1:
             system_cmd += ' GTEST_FILTER=*' + cmds[0] + '* '
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -147,6 +150,7 @@ def action_gnb_cu_pytest(cmds, key):
         system_cmd += 'make sct'
         if num_cmd == 1:
             system_cmd += ' testfilter=' + cmds[0]
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}

@@ -31,6 +31,7 @@ def action_gnb_cpnrt_sdk(cmds, key):
             return {'flag': True, 'new_input_cmd': ''}
         system_cmd = 'export SDK5G_DIR=' + sdk5g_dir + ' && '
         system_cmd += repo_dir + '/' + XConst.CPNRT_SDK_SHELL + ' -t all'
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -74,6 +75,7 @@ def action_gnb_cpnrt_build(cmds, key):
         system_cmd += ' -DCMAKE_TEST_OUTPUT_DIRECTORY=' + tests_dir
         system_cmd += ' ../gnb/cplane/CP-NRT/ && '
         system_cmd += 'make -j$(nproc) cp-nrt'
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -126,6 +128,7 @@ def action_gnb_cpnrt_ut(cmds, key):
         if num_cmd == 1:
             system_cmd += ' GTEST_FILTER=*' + cmds[0] + '* '
         system_cmd += runtime_dir + '/cp-nrt_ut'
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -176,6 +179,7 @@ def action_gnb_cpnrt_pytest(cmds, key):
         system_cmd += 'make -j$(nproc) cp-nrt_sct '
         if num_cmd == 1:
             system_cmd += 'testfilter=' + cmds[0]
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}

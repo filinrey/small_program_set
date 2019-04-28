@@ -7,10 +7,31 @@ import shutil
 from xdefine import XKey, XConst, XPrintStyle
 from xlogger import xlogger
 from xprint import xprint_new_line, xprint_head, format_color_string
-from xgnb_cprt import action_gnb_cprt_sdk, action_gnb_cprt_build, action_gnb_cprt_ut, action_gnb_cprt_pytest
+from xgnb_cprt import action_gnb_cprt_sdk, action_gnb_cprt_build, action_gnb_cprt_ut, action_gnb_cprt_pytest, action_gnb_cprt_ttcn
 from xgnb_cu import action_gnb_cu_sdk, action_gnb_cu_build, action_gnb_cu_ut, action_gnb_cu_pytest
 from xgnb_cpnrt import action_gnb_cpnrt_sdk, action_gnb_cpnrt_build, action_gnb_cpnrt_ut, action_gnb_cpnrt_pytest
 from xcommon import get_gnb_dirs
+
+
+def show_gnb_clone():
+    xprint_new_line('\t# gnb clone', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # gnb clone')
+    xprint_head('\t           -> download gnb in current diretory')
+
+
+def action_gnb_clone(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 0 and key == XKey.ENTER:
+        xprint_new_line('')
+        os.system('git clone ' + XConst.GNB_REPO)
+        xprint_head('')
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_gnb_clone()
 
 
 def show_gnb_codeformat_help():
@@ -49,6 +70,10 @@ def action_gnb_codeformat(cmds, key):
         line = f.readline().strip()
         xprint_new_line('')
         while line:
+            file_ext = os.path.splitext(line)
+            if len(file_ext) <= 1 or file_ext[1] not in ('.hpp', '.cpp', '.h', '.c', '.cc'):
+                line = f.readline().strip()
+                continue
             shutil.copy(repo_dir + '/' + line, '{}/{}.orig'.format(repo_dir, line))
             new_cmd = system_cmd + ' -i ' + line
             if os.path.exists('/usr/bin/colordiff'):
@@ -74,6 +99,10 @@ xgnb_action = {
             'action': action_gnb_codeformat,
         },
         {
+            'name': 'clone',
+            'action': action_gnb_clone,
+        },
+        {
             'name': 'cprt',
             'sub_cmds':
             [
@@ -92,6 +121,10 @@ xgnb_action = {
                 {
                     'name': 'pytest',
                     'action': action_gnb_cprt_pytest,
+                },
+                {
+                    'name': 'ttcn',
+                    'action': action_gnb_cprt_ttcn,
                 },
             ],
         },

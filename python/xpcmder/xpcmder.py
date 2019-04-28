@@ -19,6 +19,7 @@ from xrun import xrun_action
 from xinstall import xinstall_action
 from xlines import xlines_action
 from xgnb import xgnb_action
+from xreplace import xreplace_action
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -39,6 +40,7 @@ ACTION_LIST = {
         xinstall_action,
         xlines_action,
         xgnb_action,
+        xreplace_action,
     ]
 }
 

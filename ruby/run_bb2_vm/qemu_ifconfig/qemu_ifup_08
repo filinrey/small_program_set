@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/sbin/ifconfig $1 192.168.9.1
+

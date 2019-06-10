@@ -8,8 +8,8 @@ from xdefine import XKey, XConst, XPrintStyle
 from xlogger import xlogger
 from xprint import xprint_new_line, xprint_head, format_color_string
 from xgnb_cprt import action_gnb_cprt_sdk, action_gnb_cprt_build, action_gnb_cprt_ut, action_gnb_cprt_pytest, action_gnb_cprt_ttcn
-from xgnb_cu import action_gnb_cu_sdk, action_gnb_cu_build, action_gnb_cu_ut, action_gnb_cu_pytest
-from xgnb_cpnrt import action_gnb_cpnrt_sdk, action_gnb_cpnrt_build, action_gnb_cpnrt_ut, action_gnb_cpnrt_pytest
+from xgnb_cu import action_gnb_cu_sdk, action_gnb_cu_build, action_gnb_cu_ut, action_gnb_cu_mt, action_gnb_cu_pytest
+from xgnb_cpnrt import action_gnb_cpnrt_sdk, action_gnb_cpnrt_build, action_gnb_cpnrt_ut, action_gnb_cpnrt_pytest, action_gnb_cpnrt_ttcn
 from xcommon import get_gnb_dirs
 
 
@@ -145,6 +145,10 @@ xgnb_action = {
                     'action': action_gnb_cu_ut,
                 },
                 {
+                    'name': 'mt',
+                    'action': action_gnb_cu_mt,
+                },
+                {
                     'name': 'pytest',
                     'action': action_gnb_cu_pytest,
                 },
@@ -169,6 +173,10 @@ xgnb_action = {
                 {
                     'name': 'pytest',
                     'action': action_gnb_cpnrt_pytest,
+                },
+                {
+                    'name': 'ttcn',
+                    'action': action_gnb_cpnrt_ttcn,
                 },
             ],
         },

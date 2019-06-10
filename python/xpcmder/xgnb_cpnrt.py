@@ -64,7 +64,7 @@ def action_gnb_cpnrt_build(cmds, key):
         env_path = os.getenv('PATH')
         env_prefix_type = os.getenv('PREFIX_TYPE')
         if not env_prefix_type:
-            env_prefix_type = 'NATIVE'
+            env_prefix_type = 'NATIVE-gcc'
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
@@ -112,7 +112,7 @@ def action_gnb_cpnrt_ut(cmds, key):
         env_path = os.getenv('PATH')
         env_prefix_type = os.getenv('PREFIX_TYPE')
         if not env_prefix_type:
-            env_prefix_type = 'NATIVE'
+            env_prefix_type = 'NATIVE-gcc'
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
@@ -164,7 +164,7 @@ def action_gnb_cpnrt_pytest(cmds, key):
         env_path = os.getenv('PATH')
         env_prefix_type = os.getenv('PREFIX_TYPE')
         if not env_prefix_type:
-            env_prefix_type = 'NATIVE'
+            env_prefix_type = 'NATIVE-gcc'
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
@@ -185,3 +185,44 @@ def action_gnb_cpnrt_pytest(cmds, key):
         return {'flag': True, 'new_input_cmd': ''}
 
     show_gnb_cpnrt_pytest_help()
+
+
+def show_gnb_cpnrt_ttcn_help():
+    xprint_new_line('\t# gnb cpnrt ttcn [PATTERN]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # gnb cpnrt ttcn')
+    xprint_head('\t           -> run all ttcn cases for cpnrt')
+    xprint_head('\tExample 2: # gnb cpnrt ttcn test_set.test_case_name')
+    xprint_head('\t           -> run ttcn cases that name contains test_case_name for cpnrt')
+
+
+def action_gnb_cpnrt_ttcn(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd <= 1 and key == XKey.ENTER:
+        repo_dir, sdk5g_dir, build_dir = get_gnb_dirs('cpnrt')
+        if not repo_dir:
+            xprint_new_line('\tNot a git repository')
+            return {'flag': True, 'new_input_cmd': ''}
+        if not os.path.exists(build_dir):
+            os.makedirs(build_dir)
+        env_path = os.getenv('PATH')
+        env_prefix_type = os.getenv('PREFIX_TYPE')
+        if not env_prefix_type:
+            env_prefix_type = 'NATIVE-gcc'
+        system_cmd = ''
+        if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+        system_cmd += 'cd ' + build_dir + ' && '
+        system_cmd += 'cmake ../gnb/cplane/CP-NRT -DBUILD_TTCN3_SCT=ON && '
+        system_cmd += 'make sct_run_cp_nrt -j$(nproc) -l$(nproc) '
+        if num_cmd == 1:
+            system_cmd += 'SCT_TEST_PATTERNS=' + cmds[0]
+        xprint_new_line('')
+        os.system(system_cmd)
+        xprint_head('')
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_gnb_cpnrt_ttcn_help()

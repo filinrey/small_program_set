@@ -117,7 +117,7 @@ def action_gnb_cprt_ut(cmds, key):
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
 
-    show_gnb_cprt_build_help()
+    show_gnb_cprt_ut_help()
 
 
 def show_gnb_cprt_pytest_help():
@@ -165,9 +165,11 @@ def action_gnb_cprt_pytest(cmds, key):
 
 
 def show_gnb_cprt_ttcn_help():
-    xprint_new_line('\t# gnb cprt ttcn', XPrintStyle.YELLOW)
+    xprint_new_line('\t# gnb cprt ttcn [PATTERN]', XPrintStyle.YELLOW)
     xprint_head('\tExample 1: # gnb cprt pytest')
     xprint_head('\t           -> run all ttcn3 cases for cprt')
+    xprint_head('\tExample 2: # gnb cprt ttcn test_case_name')
+    xprint_head('\t           -> run ttcn cases that name contains test_case_name for cprt')
 
 
 def action_gnb_cprt_ttcn(cmds, key):
@@ -176,7 +178,7 @@ def action_gnb_cprt_ttcn(cmds, key):
         del cmds[num_cmd - 1]
         num_cmd -= 1
 
-    if num_cmd == 0 and key == XKey.ENTER:
+    if num_cmd <= 1 and key == XKey.ENTER:
         repo_dir, sdk5g_dir, build_dir = get_gnb_dirs('cprt')
         if not repo_dir:
             xprint_new_line('\tNot a git repository')
@@ -193,7 +195,9 @@ def action_gnb_cprt_ttcn(cmds, key):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'cmake ../gnb/cplane/CP-RT/CP-RT -DBUILD_UT_MT=OFF -DBUILD_TTCN3_SCT=ON && '
-        system_cmd += 'make -j$(nproc) -l$(nproc) sct_run_cp_rt'
+        system_cmd += 'make -j$(nproc) -l$(nproc) sct_run_cp_rt '
+        if num_cmd == 1:
+            system_cmd += 'SCT_TEST_PATTERNS=' + cmds[0]
         xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')

@@ -117,6 +117,47 @@ def action_gnb_cu_ut(cmds, key):
     show_gnb_cu_build_help()
 
 
+def show_gnb_cu_mt_help():
+    xprint_new_line('\t# gnb cu mt [PATTERN]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # gnb cu mt')
+    xprint_head('\t           -> run all mt cases for cu')
+    xprint_head('\tExample 2: # gnb cu mt TeidHelperTests')
+    xprint_head('\t           -> run mt cases that name contains TeidHelperTests for cu')
+
+
+def action_gnb_cu_mt(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd <= 1 and key == XKey.ENTER:
+        repo_dir, sdk5g_dir, build_dir = get_gnb_dirs('cu')
+        if not repo_dir:
+            xprint_new_line('\tNot a git repository')
+            return {'flag': True, 'new_input_cmd': ''}
+        if not os.path.exists(build_dir):
+            xprint_new_line('\tshould build firstly')
+            return {'flag': True, 'new_input_cmd': ''}
+        env_path = os.getenv('PATH')
+        env_prefix_type = os.getenv('PREFIX_TYPE')
+        if not env_prefix_type:
+            env_prefix_type = 'NATIVE-gcc'
+        system_cmd = ''
+        if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+        system_cmd += 'cd ' + build_dir + ' && '
+        system_cmd += 'make mt'
+        if num_cmd == 1:
+            system_cmd += ' testfilter=*' + cmds[0] + '* '
+        xprint_new_line('')
+        os.system(system_cmd)
+        xprint_head('')
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_gnb_cu_build_help()
+
+
 def show_gnb_cu_pytest_help():
     xprint_new_line('\t# gnb cu pytest [PATTERN]', XPrintStyle.YELLOW)
     xprint_head('\tExample 1: # gnb cu pytest')

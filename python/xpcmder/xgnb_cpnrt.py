@@ -64,7 +64,7 @@ def action_gnb_cpnrt_build(cmds, key):
         env_path = os.getenv('PATH')
         env_prefix_type = os.getenv('PREFIX_TYPE')
         if not env_prefix_type:
-            env_prefix_type = 'NATIVE-gcc'
+            env_prefix_type = XConst.CPNRT_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
@@ -112,7 +112,7 @@ def action_gnb_cpnrt_ut(cmds, key):
         env_path = os.getenv('PATH')
         env_prefix_type = os.getenv('PREFIX_TYPE')
         if not env_prefix_type:
-            env_prefix_type = 'NATIVE-gcc'
+            env_prefix_type = XConst.CPNRT_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
@@ -164,7 +164,7 @@ def action_gnb_cpnrt_pytest(cmds, key):
         env_path = os.getenv('PATH')
         env_prefix_type = os.getenv('PREFIX_TYPE')
         if not env_prefix_type:
-            env_prefix_type = 'NATIVE-gcc'
+            env_prefix_type = XConst.CPNRT_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
@@ -211,7 +211,7 @@ def action_gnb_cpnrt_ttcn(cmds, key):
         env_path = os.getenv('PATH')
         env_prefix_type = os.getenv('PREFIX_TYPE')
         if not env_prefix_type:
-            env_prefix_type = 'NATIVE-gcc'
+            env_prefix_type = XConst.CPNRT_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '

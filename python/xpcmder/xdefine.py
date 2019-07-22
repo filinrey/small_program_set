@@ -48,6 +48,9 @@ class XConst(object):
     CPNRT_SDK_SHELL = '/cplane/CP-NRT/buildscript/CP-NRT/prepare_sdk.sh'
     CLANG_FORMAT = '/usr/bin/clang-format'
     GNB_REPO = 'ssh://fenghxu@gerrit.ext.net.nokia.com:29418/MN/5G/NB/gnb.git'
+    CPNRT_PREFIX_TYPE = 'NATIVE-gcc'
+    CPRT_PREFIX_TYPE = 'NATIVE-gcc'
+    CU_PREFIX_TYPE = 'NATIVE-gcc'
 
 
 class XPrintStyle(object):

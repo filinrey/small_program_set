@@ -283,7 +283,8 @@ while True:
         while 1:
             ch = sys.stdin.read(1)
             if ch != ' ' and ord(ch) >= 32 and ord(ch) <= 126 and esc_flag == 0:
-                INPUT_CMD += ch
+                new_input_cmd = INPUT_CMD[:CUR_POS] + ch + INPUT_CMD[CUR_POS:]
+                INPUT_CMD = new_input_cmd
                 CUR_POS += 1
                 PREFIX_SHOW = XConst.PREFIX_NAME + INPUT_CMD
                 print ('\r' + PREFIX_SHOW, end='')

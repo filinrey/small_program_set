@@ -66,7 +66,7 @@ def action_gnb_cu_build(cmds, key):
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
-        system_cmd += 'cmake -GNinja ../gnb/cplane && '
+        system_cmd += 'cmake ../gnb/cplane && '
         system_cmd += 'make -j$(nproc)'
         xprint_new_line('')
         os.system(system_cmd)
@@ -109,6 +109,7 @@ def action_gnb_cu_ut(cmds, key):
         system_cmd += 'make -j$(nproc) '
         if num_cmd == 1:
             system_cmd += '&& GTEST_FILTER=*' + cmds[0] + '* '
+            xprint_new_line('Searching ' + cmds[0] + ' ...')
             uts = os.popen('cd ' + build_dir + ' && ' + 'grep -lr ' + cmds[0] + ' ./bin/')
             line = uts.readline()
             if not line:
@@ -121,7 +122,7 @@ def action_gnb_cu_ut(cmds, key):
             system_cmd = system_cmd[0:-3]
         else:
             system_cmd += 'ut'
-        xprint_new_line('')
+            xprint_new_line('')
         xprint_head(system_cmd)
         os.system(system_cmd)
         xprint_head('')
@@ -250,6 +251,7 @@ def action_gnb_cu_ttcn(cmds, key):
             system_cmd += ' SCT_TEST_PATTERNS=' + cmds[1]
         if num_cmd == 3:
             system_cmd += ' SCT_TTCN3_REPEAT_COUNT=' + cmds[2]
+        xprint_new_line('')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}

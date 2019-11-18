@@ -221,6 +221,7 @@ def action_gnb_cpnrt_ttcn(cmds, key):
         if num_cmd == 1:
             system_cmd += 'SCT_TEST_PATTERNS=' + cmds[0]
         xprint_new_line('')
+        xprint_head(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}

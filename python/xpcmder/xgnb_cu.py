@@ -108,18 +108,24 @@ def action_gnb_cu_ut(cmds, key):
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'make -j$(nproc) '
         if num_cmd == 1:
-            system_cmd += '&& GTEST_FILTER=*' + cmds[0] + '* '
-            xprint_new_line('Searching ' + cmds[0] + ' ...')
-            uts = os.popen('cd ' + build_dir + ' && ' + 'grep -lr ' + cmds[0] + ' ./bin/')
+            uts = os.popen('cd ' + build_dir + ' && ' + 'ls ./bin | grep -w ' + cmds[0])
             line = uts.readline()
-            if not line:
-                xprint_new_line('\tcan not find case include ' + cmds[0])
-                return {'flag': True, 'new_input_cmd': ''}
-            while line:
-                system_cmd += line.strip() + ' && '
-                line = uts.readline()
             uts.close()
-            system_cmd = system_cmd[0:-3]
+            if line:
+                system_cmd += '&& ./bin/' + cmds[0]
+            else:
+                system_cmd += '&& GTEST_FILTER=*' + cmds[0] + '* '
+                xprint_new_line('Searching ' + cmds[0] + ' ...')
+                uts = os.popen('cd ' + build_dir + ' && ' + 'grep -lr ' + cmds[0] + ' ./bin/')
+                line = uts.readline()
+                if not line:
+                    xprint_new_line('\tcan not find case include ' + cmds[0])
+                    return {'flag': True, 'new_input_cmd': ''}
+                while line:
+                    system_cmd += line.strip() + ' && '
+                    line = uts.readline()
+                uts.close()
+                system_cmd = system_cmd[0:-3]
         else:
             system_cmd += 'ut'
             xprint_new_line('')

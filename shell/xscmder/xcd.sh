@@ -117,7 +117,8 @@ function store_cd_history()
         fi
         if [[ "${item[$x_inc_index]}" == "$xcd_name" ]]; then
             let is_insert=1
-            new_line="${item[$x_inc_index]}    ${item[$((x_inc_index+1))]}"
+            new_line="$xcd_name    $xcd_path"
+            # new_line="${item[$x_inc_index]}    ${item[$((x_inc_index+1))]}"
         else
             new_line="$line"
         fi

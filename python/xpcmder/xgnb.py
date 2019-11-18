@@ -70,18 +70,22 @@ def action_gnb_codeformat(cmds, key):
         line = f.readline().strip()
         xprint_new_line('')
         while line:
+            line = repo_dir + '/' + line
             file_ext = os.path.splitext(line)
             if len(file_ext) <= 1 or file_ext[1] not in ('.hpp', '.cpp', '.h', '.c', '.cc'):
                 line = f.readline().strip()
                 continue
-            shutil.copy(repo_dir + '/' + line, '{}/{}.orig'.format(repo_dir, line))
+            if not os.path.exists(line):
+                line = f.readline().strip()
+                continue
+            shutil.copy(line, '{}.orig'.format(line))
             new_cmd = system_cmd + ' -i ' + line
             if os.path.exists('/usr/bin/colordiff'):
                 new_cmd += ' && colordiff -u ' + line + '.orig' + ' ' + line
             elif os.path.exists('/usr/bin/diff'):
                 new_cmd += ' && diff -u ' + line + '.orig' + ' ' + line
             os.system(new_cmd)
-            os.unlink('{}/{}.orig'.format(repo_dir, line))
+            os.unlink('{}.orig'.format(line))
             line = f.readline().strip()
         f.close()
         xprint_head('')

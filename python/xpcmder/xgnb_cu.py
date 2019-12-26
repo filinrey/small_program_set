@@ -130,6 +130,7 @@ def action_gnb_cu_ut(cmds, key):
             system_cmd += 'ut'
             xprint_new_line('')
         xprint_head(system_cmd)
+        os.system('find ' + repo_dir + ' -name ut_main.cpp | xargs sed -i \"s/spdlog::level::off/spdlog::level::trace/\"')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -175,7 +176,7 @@ def action_gnb_cu_mt(cmds, key):
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
 
-    show_gnb_cu_build_help()
+    show_gnb_cu_mt_help()
 
 
 def show_gnb_cu_pytest_help():

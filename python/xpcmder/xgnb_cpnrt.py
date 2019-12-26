@@ -188,11 +188,13 @@ def action_gnb_cpnrt_pytest(cmds, key):
 
 
 def show_gnb_cpnrt_ttcn_help():
-    xprint_new_line('\t# gnb cpnrt ttcn [PATTERN]', XPrintStyle.YELLOW)
+    xprint_new_line('\t# gnb cpnrt ttcn [PATTERN] [REPEAT_COUNT]', XPrintStyle.YELLOW)
     xprint_head('\tExample 1: # gnb cpnrt ttcn')
     xprint_head('\t           -> run all ttcn cases for cpnrt')
     xprint_head('\tExample 2: # gnb cpnrt ttcn test_set.test_case_name')
     xprint_head('\t           -> run ttcn cases that name contains test_case_name for cpnrt')
+    xprint_head('\tExample 3: # gnb cpnrt ttcn test_case_name 100')
+    xprint_head('\t           -> run ttcn cases that name contains test_case_name for cpnrt 100 times')
 
 
 def action_gnb_cpnrt_ttcn(cmds, key):
@@ -201,7 +203,7 @@ def action_gnb_cpnrt_ttcn(cmds, key):
         del cmds[num_cmd - 1]
         num_cmd -= 1
 
-    if num_cmd <= 1 and key == XKey.ENTER:
+    if num_cmd <= 2 and key == XKey.ENTER:
         repo_dir, sdk5g_dir, build_dir = get_gnb_dirs('cpnrt')
         if not repo_dir:
             xprint_new_line('\tNot a git repository')
@@ -218,8 +220,10 @@ def action_gnb_cpnrt_ttcn(cmds, key):
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'cmake ../gnb/cplane/CP-NRT -DBUILD_TTCN3_SCT=ON && '
         system_cmd += 'make sct_run_cp_nrt -j$(nproc) -l$(nproc) '
-        if num_cmd == 1:
+        if num_cmd >= 1:
             system_cmd += 'SCT_TEST_PATTERNS=' + cmds[0]
+        if num_cmd == 2:
+            system_cmd += ' SCT_TTCN3_REPEAT_COUNT=' + cmds[1]
         xprint_new_line('')
         xprint_head(system_cmd)
         os.system(system_cmd)

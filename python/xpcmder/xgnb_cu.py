@@ -26,9 +26,9 @@ def action_gnb_cu_sdk(cmds, key):
         if not repo_dir:
             xprint_new_line('\tNot a git repository')
             return {'flag': True, 'new_input_cmd': ''}
-        if os.path.exists(sdk5g_dir):
-            xprint_new_line('\tsdk5g is already exits, should remove firstly')
-            return {'flag': True, 'new_input_cmd': ''}
+        #if os.path.exists(sdk5g_dir):
+            #xprint_new_line('\tsdk5g is already exits, should remove firstly')
+            #return {'flag': True, 'new_input_cmd': ''}
         system_cmd = 'export SDK5G_DIR=' + sdk5g_dir + ' && '
         system_cmd += repo_dir + '/' + XConst.CU_SDK_SHELL + ' -t all'
         xprint_new_line('')
@@ -66,6 +66,7 @@ def action_gnb_cu_build(cmds, key):
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
+        system_cmd += 'cmake --version && echo $PATH && '
         system_cmd += 'cmake ../gnb/cplane && '
         system_cmd += 'make -j$(nproc)'
         xprint_new_line('')
@@ -114,7 +115,7 @@ def action_gnb_cu_ut(cmds, key):
             if line:
                 system_cmd += '&& ./bin/' + cmds[0]
             else:
-                system_cmd += '&& GTEST_FILTER=*' + cmds[0] + '* '
+                system_cmd += '&& '
                 xprint_new_line('Searching ' + cmds[0] + ' ...')
                 uts = os.popen('cd ' + build_dir + ' && ' + 'grep -lr ' + cmds[0] + ' ./bin/')
                 line = uts.readline()
@@ -122,7 +123,7 @@ def action_gnb_cu_ut(cmds, key):
                     xprint_new_line('\tcan not find case include ' + cmds[0])
                     return {'flag': True, 'new_input_cmd': ''}
                 while line:
-                    system_cmd += line.strip() + ' && '
+                    system_cmd += 'GTEST_FILTER=*' + cmds[0] + '* ' + line.strip() + ' && '
                     line = uts.readline()
                 uts.close()
                 system_cmd = system_cmd[0:-3]
@@ -130,7 +131,7 @@ def action_gnb_cu_ut(cmds, key):
             system_cmd += 'ut'
             xprint_new_line('')
         xprint_head(system_cmd)
-        os.system('find ' + repo_dir + ' -name ut_main.cpp | xargs sed -i \"s/spdlog::level::off/spdlog::level::trace/\"')
+        #os.system('find ' + repo_dir + ' -name ut_main.cpp | xargs sed -i \"s/spdlog::level::off/spdlog::level::trace/\"')
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -264,3 +265,48 @@ def action_gnb_cu_ttcn(cmds, key):
         return {'flag': True, 'new_input_cmd': ''}
 
     show_gnb_cu_ttcn_help()
+
+
+def show_gnb_cu_mct_help():
+    xprint_new_line('\t# gnb cu mct [PATTERN] [REPEAT_COUNT]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # gnb cu mct')
+    xprint_head('\t           -> run all ttcn3 cases in mct for cu')
+    xprint_head('\tExample 2: # gnb cu mct test_case_name')
+    xprint_head('\t           -> run mct cases that name contains test_case_name for cu')
+    xprint_head('\tExample 2: # gnb cu mct test_case_name 100')
+    xprint_head('\t           -> run mct cases that name contains test_case_name for cu 100 times')
+
+
+def action_gnb_cu_mct(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd >= 0 and num_cmd <= 2 and key == XKey.ENTER:
+        repo_dir, sdk5g_dir, build_dir = get_gnb_dirs('cu')
+        if not repo_dir:
+            xprint_new_line('\tNot a git repository')
+            return {'flag': True, 'new_input_cmd': ''}
+        if not os.path.exists(build_dir):
+            os.makedirs(build_dir)
+        env_path = os.getenv('PATH')
+        env_prefix_type = os.getenv('PREFIX_TYPE')
+        if not env_prefix_type:
+            env_prefix_type = XConst.CU_PREFIX_TYPE
+        system_cmd = ''
+        if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+        system_cmd += 'cd ' + build_dir + ' && '
+        system_cmd += 'cmake ../gnb/cplane && '
+        system_cmd += 'make -j$(nproc) -l$(nproc) mct_run'
+        if num_cmd >= 1:
+            system_cmd += ' SCT_TEST_PATTERNS=' + cmds[0]
+        if num_cmd == 2:
+            system_cmd += ' SCT_TTCN3_REPEAT_COUNT=' + cmds[1]
+        xprint_new_line('')
+        os.system(system_cmd)
+        xprint_head('')
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_gnb_cu_mct_help()

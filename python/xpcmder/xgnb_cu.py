@@ -64,12 +64,13 @@ def action_gnb_cu_build(cmds, key):
             env_prefix_type = XConst.CU_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
-            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-linsee-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'cmake --version && echo $PATH && '
-        system_cmd += 'cmake ../gnb/cplane && '
+        system_cmd += 'cmake ' + repo_dir + '/cplane && '
         system_cmd += 'make -j$(nproc)'
         xprint_new_line('')
+        xprint_head(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -105,7 +106,7 @@ def action_gnb_cu_ut(cmds, key):
             env_prefix_type = XConst.CU_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
-            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-linsee-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'make -j$(nproc) '
         if num_cmd == 1:
@@ -167,7 +168,7 @@ def action_gnb_cu_mt(cmds, key):
             env_prefix_type = XConst.CU_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
-            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-linsee-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'make mt'
         if num_cmd == 1:
@@ -208,7 +209,7 @@ def action_gnb_cu_pytest(cmds, key):
             env_prefix_type = XConst.CU_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
-            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-linsee-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'make sct'
         if num_cmd == 1:
@@ -251,9 +252,9 @@ def action_gnb_cu_ttcn(cmds, key):
             env_prefix_type = XConst.CU_PREFIX_TYPE
         system_cmd = ''
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
-            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
+            system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-linsee-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
-        system_cmd += 'cmake ../gnb/cplane && '
+        system_cmd += 'cmake ' + repo_dir + '/cplane && '
         system_cmd += 'make -j$(nproc) -l$(nproc) sct_run_' + cmds[0]
         if num_cmd >= 2:
             system_cmd += ' SCT_TEST_PATTERNS=' + cmds[1]
@@ -298,7 +299,7 @@ def action_gnb_cu_mct(cmds, key):
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
-        system_cmd += 'cmake ../gnb/cplane && '
+        system_cmd += 'cmake ' + repo_dir + '/cplane && '
         system_cmd += 'make -j$(nproc) -l$(nproc) mct_run'
         if num_cmd >= 1:
             system_cmd += ' SCT_TEST_PATTERNS=' + cmds[0]

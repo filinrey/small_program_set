@@ -68,7 +68,7 @@ def action_gnb_cprt_build(cmds, key):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'export BUILD_DIR=' + build_dir + ' && '
         system_cmd += 'cd ' + build_dir + ' && '
-        system_cmd += 'cmake -GNinja -DBUILD_TESTS=ON ../gnb/cplane/CP-RT/CP-RT/ && '
+        system_cmd += 'cmake -GNinja -DBUILD_TESTS=ON ' + repo_dir + '/cplane/CP-RT/CP-RT/ && '
         system_cmd += 'ninja'
         xprint_new_line('')
         os.system(system_cmd)
@@ -187,6 +187,8 @@ def action_gnb_cprt_ttcn(cmds, key):
             return {'flag': True, 'new_input_cmd': ''}
         if (num_cmd == 2 and cmds[1] == '-' or num_cmd == 1 and cmds[0] == '-') and os.path.exists(build_dir):
             shutil.rmtree(build_dir)
+        else:
+            build_dir = os.path.dirname(build_dir) + '/cprt_ttcn_build'
         if not os.path.exists(build_dir):
             os.makedirs(build_dir)
         env_path = os.getenv('PATH')
@@ -197,7 +199,7 @@ def action_gnb_cprt_ttcn(cmds, key):
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
-        system_cmd += 'cmake ../gnb/cplane/CP-RT/CP-RT -DBUILD_UT_MT=OFF -DBUILD_TTCN3_SCT=ON && '
+        system_cmd += 'cmake ' + repo_dir + '/cplane/CP-RT/CP-RT -DBUILD_UT_MT=OFF -DBUILD_TTCN3_SCT=ON && '
         system_cmd += 'make -j$(nproc) -l$(nproc) sct_run_cp_rt '
         if num_cmd >= 1 and (not cmds[0] == '-'):
             system_cmd += 'SCT_TEST_PATTERNS=' + cmds[0]

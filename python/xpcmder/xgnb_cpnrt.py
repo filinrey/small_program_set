@@ -73,7 +73,7 @@ def action_gnb_cpnrt_build(cmds, key):
         system_cmd += ' -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + library_dir
         system_cmd += ' -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + runtime_dir
         system_cmd += ' -DCMAKE_TEST_OUTPUT_DIRECTORY=' + tests_dir
-        system_cmd += ' ../gnb/cplane/CP-NRT/ && '
+        system_cmd += ' ' + repo_dir + '/cplane/CP-NRT/ && '
         system_cmd += 'make -j$(nproc) cp-nrt'
         xprint_new_line('')
         os.system(system_cmd)
@@ -122,7 +122,7 @@ def action_gnb_cpnrt_ut(cmds, key):
         system_cmd += ' -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + runtime_dir
         system_cmd += ' -DCMAKE_TEST_OUTPUT_DIRECTORY=' + tests_dir
         system_cmd += ' -DBUILD_TESTS=ON -DBUILD_TTCN3_SCT=OFF'
-        system_cmd += ' ../gnb/cplane/CP-NRT/ && '
+        system_cmd += ' ' + repo_dir + '/cplane/CP-NRT/ && '
         system_cmd += 'make -j$(nproc) cp-nrt_ut && '
         system_cmd += 'export GTEST_OUTPUT=xml:' + ut_output_file + ' && '
         if num_cmd == 1:
@@ -174,7 +174,7 @@ def action_gnb_cpnrt_pytest(cmds, key):
         system_cmd += ' -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + runtime_dir
         system_cmd += ' -DCMAKE_TEST_OUTPUT_DIRECTORY=' + tests_dir
         system_cmd += ' -DBUILD_SCT=ON'
-        system_cmd += ' ../gnb/cplane/CP-NRT/ && '
+        system_cmd += ' ' + repo_dir + '/cplane/CP-NRT/ && '
         system_cmd += 'make -j$(nproc) cp-nrt && '
         system_cmd += 'make -j$(nproc) cp-nrt_sct '
         if num_cmd == 1:
@@ -218,7 +218,7 @@ def action_gnb_cpnrt_ttcn(cmds, key):
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'cd ' + build_dir + ' && '
-        system_cmd += 'cmake ../gnb/cplane/CP-NRT -DBUILD_TTCN3_SCT=ON && '
+        system_cmd += 'cmake ' + repo_dir + '/cplane/CP-NRT -DBUILD_TTCN3_SCT=ON && '
         system_cmd += 'make sct_run_cp_nrt -j$(nproc) -l$(nproc) '
         if num_cmd >= 1:
             system_cmd += 'SCT_TEST_PATTERNS=' + cmds[0]

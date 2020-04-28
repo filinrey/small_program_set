@@ -33,7 +33,7 @@ def get_max_same_string(pattern, string_list):
 
 
 def get_gnb_dirs(gnb_type):
-    f = os.popen('git worktree list 2>&1')
+    f = os.popen('/opt/git/x86_64/2.24.1/bin/git worktree list 2>&1')
     #f = os.popen('git rev-parse --git-dir')
     line = f.readline().strip()
     f.close()

@@ -14,7 +14,7 @@ function seconds_to_time()
     hour=$((hours%24))
     days=$((hours/24))
 
-    echo "$days days $hour::$minute::$second"
+    echo "$days days and $hour::$minute::$second"
 }
 
 function log()
@@ -72,7 +72,7 @@ do
     log "start to run opengrok-indexer"
     start_seconds=$(date +%s)
 
-    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -s $opengrok_dir/src/ -d $opengrok_dir/data/ -H -P -S -G -W $opengrok_dir/etc/configuration.xml
+    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -s $opengrok_dir/src/ -d $opengrok_dir/data/ -H -P -S -G -W $opengrok_dir/etc/configuration.xml -i 'd:*_build' -i 'd:*_sdk5g' -i 'd:build' -i 'd:sdk5g' -i '*.so' -i '*.a' -i '*.o' -i '*.zip' -i '*.tar' -i '*.gz' -i '*.bz2' -i '*.pyc' -i '*.exe'
 
     end_seconds=$(date +%s)
     seconds=$((end_seconds - start_seconds))

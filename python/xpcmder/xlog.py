@@ -67,6 +67,7 @@ def untgz(item, path, file_name, extract_dir):
     untgz_dir = extract_dir + '/' + os.path.dirname(item) + '/' + file_name
     command = 'mkdir -p ' + untgz_dir + ' && tar zxvf ' + path + ' -C ' + untgz_dir
     result = subprocess.call(command, shell=True)
+    #xprint_head('untgz result is ' + str(result))
     return result
 
 
@@ -108,22 +109,22 @@ def extract_files_from_log_dir(log_dir, extract_dir):
 
             result = 1
             if file_ext == '.zip':
-                xprint_head('extracting ' + path)
+                xprint_head('extracting zip - ' + path)
                 result = unzip(relative_path, path, file_name, extract_dir)
             if file_ext == '.7z':
-                xprint_head('extracting ' + path)
+                xprint_head('extracting 7z - ' + path)
                 result = un7z(relative_path, path, file_name, extract_dir)
             if file_ext == '.xz':
-                xprint_head('extracting ' + path)
+                xprint_head('extracting xz - ' + path)
                 result = unxz(path)
             if file_ext == '.tgz':
-                xprint_head('extracting ' + path)
+                xprint_head('extracting tgz - ' + path)
                 result = untgz(relative_path, path, file_name, extract_dir)
             if file_ext == '.tar':
-                xprint_head('extracting ' + path)
+                xprint_head('extracting tar - ' + path)
                 result = untar(relative_path, path, file_name, extract_dir)
             if file_ext == '.gz':
-                xprint_head('extracting ' + path)
+                xprint_head('extracting gz - ' + path)
                 result = ungz(path)
                 if result != 0:
                     result = untgz(relative_path, path, file_name, extract_dir)
@@ -150,29 +151,30 @@ def extract_files_from_extract_dir(extract_dir):
 
                 result = 1
                 if file_ext == '.zip':
-                    xprint_head('extracting ' + path)
+                    xprint_head('extracting zip - ' + path)
                     result = unzip(relative_path, path, file_name, extract_dir)
                 if file_ext == '.7z':
-                    xprint_head('extracting ' + path)
+                    xprint_head('extracting 7z - ' + path)
                     result = un7z(relative_path, path, file_name, extract_dir)
                 if file_ext == '.xz':
-                    xprint_head('extracting ' + path)
+                    xprint_head('extracting xz - ' + path)
                     result = unxz(path)
                 if file_ext == '.tgz':
-                    xprint_head('extracting ' + path)
+                    xprint_head('extracting tgz - ' + path)
                     result = untgz(relative_path, path, file_name, extract_dir)
                 if file_ext == '.tar':
-                    xprint_head('extracting ' + path)
+                    xprint_head('extracting tar - ' + path)
                     result = untar(relative_path, path, file_name, extract_dir)
                 if file_ext == '.gz':
-                    xprint_head('extracting ' + path)
+                    xprint_head('extracting gz - ' + path)
                     result = ungz(path)
                     if result != 0:
                         result = untgz(relative_path, path, file_name, extract_dir)
                 if result == 0:
-                    if os.path.exists(path):
-                        os.remove(path)
+                    xprint_head('result is 0, will continue to uncompress')
                     is_exist_of_compress = True
+                if os.path.exists(path):
+                    os.remove(path)
 
 
 def action_log_extract(cmds, key):

@@ -76,6 +76,20 @@ def ungz(path):
     return result
 
 
+def untar(item, path, file_name, extract_dir):
+    untar_dir = extract_dir + '/' + os.path.dirname(item) + '/' + file_name
+    command = 'mkdir -p ' + untar_dir + ' && tar xvf ' + path + ' -C ' + untar_dir
+    result = subprocess.call(command, shell=True)
+    return result
+
+
+def copy_file(item, path, file_name, extract_dir):
+    copy_dir = extract_dir + '/' + os.path.dirname(item) + '/'
+    command = 'mkdir -p ' + copy_dir + ' && cp -f ' + path + ' ' + copy_dir
+    result = subprocess.call(command, shell=True)
+    return result
+
+
 def extract_files_from_log_dir(log_dir, extract_dir):
     tree = os.walk(log_dir)
     for root, dirs, files in tree:
@@ -87,13 +101,35 @@ def extract_files_from_log_dir(log_dir, extract_dir):
             file_full_name = os.path.basename(path)
             file_name = os.path.splitext(file_full_name)[0]
             file_ext = os.path.splitext(file_full_name)[1]
-            xprint_head('extracting ' + path)
 
             relative_path = path[len(log_dir):]
             if relative_path[0] == '/':
                 relative_path = relative_path[1:]
+
+            result = 1
             if file_ext == '.zip':
-                unzip(relative_path, path, file_name, extract_dir)
+                xprint_head('extracting ' + path)
+                result = unzip(relative_path, path, file_name, extract_dir)
+            if file_ext == '.7z':
+                xprint_head('extracting ' + path)
+                result = un7z(relative_path, path, file_name, extract_dir)
+            if file_ext == '.xz':
+                xprint_head('extracting ' + path)
+                result = unxz(path)
+            if file_ext == '.tgz':
+                xprint_head('extracting ' + path)
+                result = untgz(relative_path, path, file_name, extract_dir)
+            if file_ext == '.tar':
+                xprint_head('extracting ' + path)
+                result = untar(relative_path, path, file_name, extract_dir)
+            if file_ext == '.gz':
+                xprint_head('extracting ' + path)
+                result = ungz(path)
+                if result != 0:
+                    result = untgz(relative_path, path, file_name, extract_dir)
+            if result != 0:
+                xprint_head('copying ' + path)
+                copy_file(relative_path, path, file_name, extract_dir)
 
 
 def extract_files_from_extract_dir(extract_dir):
@@ -107,7 +143,6 @@ def extract_files_from_extract_dir(extract_dir):
                 file_full_name = os.path.basename(path)
                 file_name = os.path.splitext(file_full_name)[0]
                 file_ext = os.path.splitext(file_full_name)[1]
-                xprint_head('extracting ' + path)
 
                 relative_path = path[len(extract_dir):]
                 if relative_path[0] == '/':
@@ -115,14 +150,22 @@ def extract_files_from_extract_dir(extract_dir):
 
                 result = 1
                 if file_ext == '.zip':
+                    xprint_head('extracting ' + path)
                     result = unzip(relative_path, path, file_name, extract_dir)
                 if file_ext == '.7z':
+                    xprint_head('extracting ' + path)
                     result = un7z(relative_path, path, file_name, extract_dir)
                 if file_ext == '.xz':
+                    xprint_head('extracting ' + path)
                     result = unxz(path)
                 if file_ext == '.tgz':
+                    xprint_head('extracting ' + path)
                     result = untgz(relative_path, path, file_name, extract_dir)
+                if file_ext == '.tar':
+                    xprint_head('extracting ' + path)
+                    result = untar(relative_path, path, file_name, extract_dir)
                 if file_ext == '.gz':
+                    xprint_head('extracting ' + path)
                     result = ungz(path)
                     if result != 0:
                         result = untgz(relative_path, path, file_name, extract_dir)

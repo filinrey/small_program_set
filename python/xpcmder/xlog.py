@@ -6,6 +6,7 @@ import re
 import shutil
 import zipfile
 import subprocess
+import datetime
 from xdefine import XKey, XConst, XPrintStyle
 from xlogger import xlogger
 from xprint import xprint_new_line, xprint_head, format_color_string
@@ -95,7 +96,7 @@ def extract_files_from_log_dir(log_dir, extract_dir):
     tree = os.walk(log_dir)
     for root, dirs, files in tree:
         for item in files:
-            xprint_head('root is ' + root + ', item is ' + item)
+            #xprint_head('root is ' + root + ', item is ' + item)
             path = os.path.join(root, item)
             xprint_head(path)
 
@@ -107,28 +108,27 @@ def extract_files_from_log_dir(log_dir, extract_dir):
             if relative_path[0] == '/':
                 relative_path = relative_path[1:]
 
-            result = 1
             if file_ext == '.zip':
                 xprint_head('extracting zip - ' + path)
-                result = unzip(relative_path, path, file_name, extract_dir)
-            if file_ext == '.7z':
+                unzip(relative_path, path, file_name, extract_dir)
+            elif file_ext == '.7z':
                 xprint_head('extracting 7z - ' + path)
-                result = un7z(relative_path, path, file_name, extract_dir)
-            if file_ext == '.xz':
+                un7z(relative_path, path, file_name, extract_dir)
+            elif file_ext == '.xz':
                 xprint_head('extracting xz - ' + path)
-                result = unxz(path)
-            if file_ext == '.tgz':
+                unxz(path)
+            elif file_ext == '.tgz':
                 xprint_head('extracting tgz - ' + path)
-                result = untgz(relative_path, path, file_name, extract_dir)
-            if file_ext == '.tar':
+                untgz(relative_path, path, file_name, extract_dir)
+            elif file_ext == '.tar':
                 xprint_head('extracting tar - ' + path)
-                result = untar(relative_path, path, file_name, extract_dir)
-            if file_ext == '.gz':
+                untar(relative_path, path, file_name, extract_dir)
+            elif file_ext == '.gz':
                 xprint_head('extracting gz - ' + path)
                 result = ungz(path)
                 if result != 0:
-                    result = untgz(relative_path, path, file_name, extract_dir)
-            if result != 0:
+                    untgz(relative_path, path, file_name, extract_dir)
+            else:
                 xprint_head('copying ' + path)
                 copy_file(relative_path, path, file_name, extract_dir)
 
@@ -153,23 +153,25 @@ def extract_files_from_extract_dir(extract_dir):
                 if file_ext == '.zip':
                     xprint_head('extracting zip - ' + path)
                     result = unzip(relative_path, path, file_name, extract_dir)
-                if file_ext == '.7z':
+                elif file_ext == '.7z':
                     xprint_head('extracting 7z - ' + path)
                     result = un7z(relative_path, path, file_name, extract_dir)
-                if file_ext == '.xz':
+                elif file_ext == '.xz':
                     xprint_head('extracting xz - ' + path)
                     result = unxz(path)
-                if file_ext == '.tgz':
+                elif file_ext == '.tgz':
                     xprint_head('extracting tgz - ' + path)
                     result = untgz(relative_path, path, file_name, extract_dir)
-                if file_ext == '.tar':
+                elif file_ext == '.tar':
                     xprint_head('extracting tar - ' + path)
                     result = untar(relative_path, path, file_name, extract_dir)
-                if file_ext == '.gz':
+                elif file_ext == '.gz':
                     xprint_head('extracting gz - ' + path)
                     result = ungz(path)
                     if result != 0:
                         result = untgz(relative_path, path, file_name, extract_dir)
+                else:
+                    continue
                 if result == 0:
                     xprint_head('result is 0, will continue to uncompress')
                     is_exist_of_compress = True
@@ -184,16 +186,79 @@ def action_log_extract(cmds, key):
         num_cmd -= 1
 
     if num_cmd <= 1 and key == XKey.ENTER:
+        start_date = datetime.datetime.now()
         log_dir, extract_dir = get_log_extract_dir(cmds, num_cmd)
         xprint_new_line('\tlog are in ' + log_dir + ', will extract to ' + extract_dir)
         os.system('mkdir -p ' + extract_dir)
 
         extract_files_from_log_dir(log_dir, extract_dir)
         extract_files_from_extract_dir(extract_dir)
+        end_date = datetime.datetime.now()
+        xprint_head('\ttake ' + str((end_date - start_date).seconds / 60) + ' minutes to extract logs')
 
         return {'flag': True, 'new_input_cmd': ''}
 
     show_log_extract_help()
+
+
+def show_log_find_path_help():
+    xprint_new_line('\t# log find path [PARTTERN]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # log find path cpue')
+    xprint_head('\t           -> find all paths that name of path is relative with cpue,')
+    xprint_head('\t              PARTTERN supports cpue, cpif, cpnb, cpcl, cprt')
+
+
+def action_log_find_path(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 1 and key == XKey.ENTER:
+
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_log_find_path_help()
+
+
+def show_log_find_context_help():
+    xprint_new_line('\t# log find context [PARTTERN]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # log find context cpue')
+    xprint_head('\t           -> find all files which contains text of cpue')
+
+
+def action_log_find_context(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 1 and key == XKey.ENTER:
+
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_log_find_context_help()
+
+
+def show_log_opendir_help():
+    xprint_new_line('\t# log opendir [DIR]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # log opendir file')
+    xprint_head('\t           -> open dir of the file')
+    xprint_head('\tExample 2: # log opendir dir')
+    xprint_head('\t           -> open dir')
+
+
+def action_log_opendir(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 1 and key == XKey.ENTER:
+
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_log_opendir_help()
 
 
 xlog_action = {
@@ -203,6 +268,24 @@ xlog_action = {
         {
             'name': 'extract',
             'action': action_log_extract,
+        },
+        {
+            'name': 'find',
+            'sub_cmds':
+            [
+                {
+                    'name': 'path',
+                    'action': action_log_find_path,
+                },
+                {
+                    'name': 'context',
+                    'action': action_log_find_context,
+                },
+            ],
+        },
+        {
+            'name': 'opendir',
+            'action': action_log_opendir,
         },
     ],
 }

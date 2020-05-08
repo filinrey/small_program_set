@@ -52,6 +52,17 @@ class XConst(object):
     CPRT_PREFIX_TYPE = 'NATIVE-gcc'
     CU_PREFIX_TYPE = 'NATIVE-gcc'
 
+    CPUE_DIR_FILE_NAMES = [
+        {
+            'name': 'E007',
+            'type': 'dir',
+        },
+        {
+            'name': 'runtime_cp_ue',
+            'type': 'file',
+        },
+    ]
+
 
 class XPrintStyle(object):
     # color print style: \033[mode;foreground;backgroundm + output + \033[0m

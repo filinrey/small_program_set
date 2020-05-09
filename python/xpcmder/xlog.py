@@ -209,7 +209,7 @@ def action_log_extract(cmds, key):
         extract_files_from_log_dir(log_dir, extract_dir, depth)
         extract_files_from_extract_dir(extract_dir, depth)
         end_date = datetime.datetime.now()
-        xprint_head('\ttake ' + str((end_date - start_date).seconds / 60) + ' minutes to extract logs')
+        xprint_head('\n\ttake ' + str((end_date - start_date).seconds / 60) + ' minutes to extract logs')
 
         return {'flag': True, 'new_input_cmd': ''}
 
@@ -223,6 +223,82 @@ def show_log_find_path_help():
     xprint_head('\t              PARTTERN supports cpue, cpif, cpnb, cpcl, cprt')
 
 
+def find_option(name):
+    find_type = ''
+    if name['type'] == 'dir':
+        find_type = ' -type d '
+    elif name['type'] == 'file':
+        find_type = ' -type f '
+    case = ' -iname '
+    if name['case'] != 'ignore':
+        case = ' -name '
+    option = find_type + case + '\"' + name['name'] + '\"'
+
+    return option
+
+
+def analyze_output(extract_dir, output):
+    dirs = []
+    files = {}
+    for line in output:
+        path = os.path.abspath(line)
+        relative_path = path[len(extract_dir):]
+        if relative_path[0] == '/':
+            relative_path = relative_path[1:]
+        if os.path.isdir(relative_path):
+            dirs.append(relative_path)
+        if os.path.isfile(relative_path):
+            file_name = os.path.basename(relative_path)
+            if file_name in files:
+                files[file_name].append(relative_path)
+            else:
+                files[file_name] = [relative_path]
+
+    return dirs, files
+
+
+def show_output(dirs, files):
+    xprint_head(' ')
+    xprint_head('[DIRS]', XPrintStyle.BLUE)
+    for directory in dirs:
+        xprint_head(directory)
+    xprint_head(' ')
+
+    other_files = []
+    sorted_files = sorted(files.items(), key=lambda d: len(d[1]), reverse=True)
+    for item in sorted_files:
+        #xprint_head(item)
+        if len(item[1]) == 1:
+            other_files.append(item[1][0])
+            continue
+        xprint_head('[' + item[0] + ']', XPrintStyle.YELLOW)
+        for path in item[1]:
+            xprint_head(path)
+        xprint_head(' ')
+
+    if len(other_files) == 0:
+        return
+    xprint_head('[OTHERS]', XPrintStyle.YELLOW)
+    for other in other_files:
+        xprint_head(other)
+    xprint_head(' ')
+
+
+def precheck_log(extract_dir, log_type):
+    if log_type in XConst.LOG_TYPE_DICT:
+        command = 'find ' + extract_dir + ' '
+        for name in XConst.LOG_TYPE_DICT[log_type]:
+            command = command + find_option(name) + ' -o '
+
+        if command[-3:] == '-o ':
+            command = command[:-3]
+        child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        output = child.communicate()[0].split()
+
+        dirs, files = analyze_output(extract_dir, output)
+        show_output(dirs, files)
+
+
 def action_log_find_path(cmds, key):
     num_cmd = len(cmds)
     if cmds[num_cmd - 1] == '':
@@ -230,7 +306,10 @@ def action_log_find_path(cmds, key):
         num_cmd -= 1
 
     if num_cmd == 1 and key == XKey.ENTER:
-
+        log_type = cmds[0]
+        extract_dir = os.getcwd()
+        xprint_new_line()
+        precheck_log(extract_dir, log_type)
         return {'flag': True, 'new_input_cmd': ''}
 
     show_log_find_path_help()

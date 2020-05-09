@@ -52,16 +52,88 @@ class XConst(object):
     CPRT_PREFIX_TYPE = 'NATIVE-gcc'
     CU_PREFIX_TYPE = 'NATIVE-gcc'
 
+    WARNING_LOG = ['WRN', 'WARN', 'WARNING']
+    ERROR_LOG = ['ERR', 'ERROR']
     CPUE_DIR_FILE_NAMES = [
         {
-            'name': 'E007',
-            'type': 'dir',
+            'name': '*E007*',
+            'case': 'upper',
+            'type': 'dir'
         },
         {
-            'name': 'runtime_cp_ue',
-            'type': 'file',
+            'name': '*cp*ue*',
+            'case': 'ignore',
+            'type': 'all'
         },
     ]
+    CPNB_DIR_FILE_NAMES = [
+        {
+            'name': '*E003*',
+            'case': 'upper',
+            'type': 'dir'
+        },
+        {
+            'name': '*cp*nb*',
+            'case': 'ignore',
+            'type': 'all'
+        },
+    ]
+    CPIF_DIR_FILE_NAMES = [
+        {
+            'name': '*E004*',
+            'case': 'upper',
+            'type': 'dir'
+        },
+        {
+            'name': '*cp*if*',
+            'case': 'ignore',
+            'type': 'all'
+        },
+    ]
+    CPCL_DIR_FILE_NAMES = [
+        {
+            'name': '*E002*',
+            'case': 'upper',
+            'type': 'dir'
+        },
+        {
+            'name': '*cp*cl*',
+            'case': 'ignore',
+            'type': 'all'
+        },
+    ]
+    CPRT_DIR_FILE_NAMES = [
+        {
+            'name': '*E005*',
+            'case': 'upper',
+            'type': 'dir'
+        },
+        {
+            'name': '*cp[_-]rt*',
+            'case': 'ignore',
+            'type': 'all'
+        },
+    ]
+    CPNRT_DIR_FILE_NAMES = [
+        {
+            'name': '*E008*',
+            'case': 'upper',
+            'type': 'dir'
+        },
+        {
+            'name': '*cp*nrt*',
+            'case': 'ignore',
+            'type': 'all'
+        },
+    ]
+    LOG_TYPE_DICT = {
+        'cpue': CPUE_DIR_FILE_NAMES,
+        'cpnb': CPNB_DIR_FILE_NAMES,
+        'cpif': CPIF_DIR_FILE_NAMES,
+        'cpcl': CPCL_DIR_FILE_NAMES,
+        'cprt': CPRT_DIR_FILE_NAMES,
+        'cpnrt': CPNRT_DIR_FILE_NAMES,
+    }
 
 
 class XPrintStyle(object):

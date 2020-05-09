@@ -14,11 +14,13 @@ from xcommon import get_gnb_dirs
 
 
 def show_log_extract_help():
-    xprint_new_line('\t# log extract [DIR]', XPrintStyle.YELLOW)
+    xprint_new_line('\t# log extract [DIR] [DEPTH]', XPrintStyle.YELLOW)
     xprint_head('\tExample 1: # log extract')
     xprint_head('\t           -> extract all files in current directory to *_extract/')
     xprint_head('\tExample 2: # log extract /test/')
     xprint_head('\t           -> extract all files in /test/ to /test_extract/')
+    xprint_head('\tExample 3: # log extract /test/ 3')
+    xprint_head('\t           -> extract files with 3 depth sub-dir in /test/ to /test_extract/')
 
 
 def get_log_extract_dir(cmds, num_cmd):
@@ -33,6 +35,7 @@ def get_log_extract_dir(cmds, num_cmd):
             log_dir = log_dir + '/' + cmds[0][2:]
         else:
             log_dir = log_dir + '/' + cmds[0]
+    log_dir = os.path.abspath(log_dir)
     if log_dir[-1] == '/':
         log_dir = log_dir[:-1]
     ignore_dir = ['', '/', '/var', '/usr', '/bin', '/lib', '/tmp']
@@ -92,13 +95,18 @@ def copy_file(item, path, file_name, extract_dir):
     return result
 
 
-def extract_files_from_log_dir(log_dir, extract_dir):
+def depth_of_file(relative_path):
+    return relative_path.count('/')
+
+
+def extract_files_from_log_dir(log_dir, extract_dir, depth):
     tree = os.walk(log_dir)
     for root, dirs, files in tree:
         for item in files:
             #xprint_head('root is ' + root + ', item is ' + item)
             path = os.path.join(root, item)
-            xprint_head(path)
+            path = os.path.abspath(path)
+            #xprint_head(path)
 
             file_full_name = os.path.basename(path)
             file_name = os.path.splitext(file_full_name)[0]
@@ -107,6 +115,8 @@ def extract_files_from_log_dir(log_dir, extract_dir):
             relative_path = path[len(log_dir):]
             if relative_path[0] == '/':
                 relative_path = relative_path[1:]
+            if depth_of_file(relative_path) > depth:
+                continue
 
             if file_ext == '.zip':
                 xprint_head('extracting zip - ' + path)
@@ -133,7 +143,7 @@ def extract_files_from_log_dir(log_dir, extract_dir):
                 copy_file(relative_path, path, file_name, extract_dir)
 
 
-def extract_files_from_extract_dir(extract_dir):
+def extract_files_from_extract_dir(extract_dir, depth):
     is_exist_of_compress = True
     while is_exist_of_compress:
         is_exist_of_compress = False
@@ -148,6 +158,8 @@ def extract_files_from_extract_dir(extract_dir):
                 relative_path = path[len(extract_dir):]
                 if relative_path[0] == '/':
                     relative_path = relative_path[1:]
+                if depth_of_file(relative_path) > depth:
+                    continue
 
                 result = 1
                 if file_ext == '.zip':
@@ -185,14 +197,17 @@ def action_log_extract(cmds, key):
         del cmds[num_cmd - 1]
         num_cmd -= 1
 
-    if num_cmd <= 1 and key == XKey.ENTER:
+    if num_cmd <= 2 and key == XKey.ENTER:
         start_date = datetime.datetime.now()
+        depth = 255
+        if num_cmd == 2:
+            depth = int(cmds[1])
         log_dir, extract_dir = get_log_extract_dir(cmds, num_cmd)
         xprint_new_line('\tlog are in ' + log_dir + ', will extract to ' + extract_dir)
         os.system('mkdir -p ' + extract_dir)
 
-        extract_files_from_log_dir(log_dir, extract_dir)
-        extract_files_from_extract_dir(extract_dir)
+        extract_files_from_log_dir(log_dir, extract_dir, depth)
+        extract_files_from_extract_dir(extract_dir, depth)
         end_date = datetime.datetime.now()
         xprint_head('\ttake ' + str((end_date - start_date).seconds / 60) + ' minutes to extract logs')
 

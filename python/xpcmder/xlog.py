@@ -257,12 +257,15 @@ def analyze_output(extract_dir, output):
     return dirs, files
 
 
-def show_output(dirs, files):
+def show_output(dirs, files, log_type):
     xprint_head(' ')
     xprint_head('[DIRS]', XPrintStyle.BLUE)
+    analyzed_result = '[DIRS]'
     for directory in dirs:
         xprint_head(directory)
+        analyzed_result = '\n' + directory
     xprint_head(' ')
+    analyzed_result = '\n '
 
     other_files = []
     sorted_files = sorted(files.items(), key=lambda d: len(d[1]), reverse=True)
@@ -272,16 +275,25 @@ def show_output(dirs, files):
             other_files.append(item[1][0])
             continue
         xprint_head('[' + item[0] + ']', XPrintStyle.YELLOW)
+        analyzed_result = '\n[' + item[0] + ']'
         for path in item[1]:
             xprint_head(path)
+            analyzed_result = '\n' + path
         xprint_head(' ')
+        analyzed_result = '\n '
 
-    if len(other_files) == 0:
-        return
-    xprint_head('[OTHERS]', XPrintStyle.YELLOW)
-    for other in other_files:
-        xprint_head(other)
-    xprint_head(' ')
+    if len(other_files) > 0:
+        xprint_head('[OTHERS]', XPrintStyle.YELLOW)
+        analyzed_result = '\n[OTHERS]'
+        for other in other_files:
+            xprint_head(other)
+            analyzed_result = '\n' + other
+        xprint_head(' ')
+        analyzed_result = '\n '
+
+    command = 'mkdir -p ' + XConst.ANALYZED_DIR + ' && '
+    command = 'echo ' + analyzed_result + ' > ' + XConst.ANALYZED_DIR + '/' + log_type + '_relative_files'
+    subprocess.call(command, shell=True)
 
 
 def precheck_log(extract_dir, log_type):
@@ -296,7 +308,7 @@ def precheck_log(extract_dir, log_type):
         output = child.communicate()[0].split()
 
         dirs, files = analyze_output(extract_dir, output)
-        show_output(dirs, files)
+        show_output(dirs, files, log_type)
 
 
 def action_log_find_path(cmds, key):
@@ -328,6 +340,28 @@ def action_log_find_context(cmds, key):
         num_cmd -= 1
 
     if num_cmd == 1 and key == XKey.ENTER:
+        xprint_new_line('ues are finding...')
+        if not os.path.exists(XConst.ANALYZED_DIR + '/grep_ueIdCu.tmp'):
+            if not os.path.exists(XConst.ANALYZED_DIR):
+                os.mkdir(XConst.ANALYZED_DIR)
+            command = 'grep -nrIE \"ueIdCu:[0-9]+\" --exclude-dir=' + XConst.ANALYZED_DIR + ' > ' + XConst.ANALYZED_DIR + '/grep_ueIdCu.tmp'
+            #xprint_head(command)
+            child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            child.communicate()
+
+        command = 'cat ' + XConst.ANALYZED_DIR + '/grep_ueIdCu.tmp' + ' | sed -nr \"s/.*ueIdCu:([0-9]+).*/\\1/p\" | sort -u'
+        #xprint_head(command)
+        child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        id_output = child.communicate()[0].split()
+        id_output = sorted(id_output, key=lambda d: int(d))
+        #xprint_head(id_output)
+        xprint_head('[UEIDCU] ( ' + str(len(id_output)) + ' )', XPrintStyle.YELLOW)
+        id_str = ''
+        for ueid in id_output:
+            id_str = id_str + str(ueid) + ','
+        if id_str[-1] == ',':
+            id_str = id_str[:-1]
+        xprint_head(id_str)
 
         return {'flag': True, 'new_input_cmd': ''}
 

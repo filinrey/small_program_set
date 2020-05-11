@@ -134,6 +134,7 @@ class XConst(object):
         'cprt': CPRT_DIR_FILE_NAMES,
         'cpnrt': CPNRT_DIR_FILE_NAMES,
     }
+    ANALYZED_DIR = 'analyzed_result'
 
 
 class XPrintStyle(object):

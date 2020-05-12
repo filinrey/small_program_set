@@ -351,6 +351,16 @@ def write_head_in_id_map_file(f):
     f.write(head)
 
 
+def find_ueidcu(read_line, ueidcus):
+    ueidcu = ''
+    key = XConst.IDS[0] + ':([0-9]+)'
+    obj = re.search(r'.+' + key + '.*', read_line)
+    if obj:
+        ueidcu = obj.group(1).replace(' ', '')
+        if not ueidcu in ueidcus:
+            ueidcus.append(ueidcu)
+
+
 def show_ueidcu(ueidcus):
     xprint_head('[UEIDCU] ( ' + str(len(ueidcus)) + ' )', XPrintStyle.YELLOW)
     id_str = ''
@@ -359,6 +369,52 @@ def show_ueidcu(ueidcus):
     if id_str[-1] == ',':
         id_str = id_str[:-1]
     xprint_head(id_str + '\n')
+
+
+def find_id_map(read_line, id_map_history):
+    key = XConst.IDS[0] + ':[0-9]+,.+[0-9]+'
+    obj = re.search(r'.+\[(' + key + ')\].+', read_line)
+    if not obj:
+        return False, ''
+    id_map_output = obj.group(1).replace(' ', '')
+    if id_map_output in id_map_history:
+        return False, ''
+    id_map_history.append(id_map_output)
+    return True, id_map_output
+
+
+def add_id_map(id_map_output, id_map, count):
+    id_map_index = 0
+    id_map_values = [' ', ' ', ' ', ' ', ' ', ' ', ' ']
+    for id_name in XConst.IDS:
+        obj = re.search(r'.*' + id_name + ':([0-9]+).*', id_map_output)
+        if obj:
+            id_map_values[id_map_index] = obj.group(1)
+        id_map_index = id_map_index + 1
+    if id_map_values[0] != ' ':
+        if id_map_values[0] in id_map:
+            id_map[id_map_values[0]].append(id_map_values)
+        else:
+            id_map[id_map_values[0]] = [id_map_values]
+        count = count + 1
+    return count
+
+
+def format_id_map(ueidcus, id_map):
+    for ueid in ueidcus:
+        if not ueid in id_map:
+            id_map_values = [ueid, ' ', ' ', ' ', ' ', ' ', ' ']
+            id_map[ueid] = [id_map_values]
+    return sorted(id_map.items(), key=lambda d: int(d[0]))
+
+
+def write_id_map(fw, sorted_list):
+    for item in sorted_list:
+        for id_values in item[1]:
+            line = ''
+            for id_value in id_values:
+                line = line + id_value + ' ' * (XConst.ID_OFFSET - len(id_value))
+            fw.write(line.strip() + '\n\n')
 
 
 def find_and_show_id_map():
@@ -373,51 +429,18 @@ def find_and_show_id_map():
         fr = open(XConst.GREP_ID_FILE, 'r')
         write_head_in_id_map_file(fw)
         for read_line in fr:
-            ueidcu = ''
-            key = XConst.IDS[0] + ':([0-9]+)'
-            obj = re.search(r'.+' + key + '.*', read_line)
-            if obj:
-                ueidcu = obj.group(1).replace(' ', '')
-                if not ueidcu in ueidcus:
-                    ueidcus.append(ueidcu)
+            find_ueidcu(read_line, ueidcus)
 
-            key = XConst.IDS[0] + ':[0-9]+,.+[0-9]+'
-            obj = re.search(r'.+\[(' + key + ')\].+', read_line)
-            if not obj:
+            is_find, id_map_output = find_id_map(read_line, id_map_history)
+            if not is_find:
                 continue
-            id_map_output = obj.group(1).replace(' ', '')
-            if id_map_output in id_map_history:
-                continue
-            id_map_history.append(id_map_output)
-            id_map_index = 0
-            id_map_values = [' ', ' ', ' ', ' ', ' ', ' ', ' ']
-            for id_name in XConst.IDS:
-                obj = re.search(r'.*' + id_name + ':([0-9]+).*', id_map_output)
-                if obj:
-                    id_map_values[id_map_index] = obj.group(1)
-                id_map_index = id_map_index + 1
-            if id_map_values[0] != ' ':
-                if id_map_values[0] in id_map:
-                    id_map[id_map_values[0]].append(id_map_values)
-                else:
-                    id_map[id_map_values[0]] = [id_map_values]
-                count = count + 1
+            count = add_id_map(id_map_output, id_map, count)
 
         ueidcus = sorted(ueidcus, key=lambda d: int(d))
         show_ueidcu(ueidcus)
 
-        for ueid in ueidcus:
-            if not ueid in id_map:
-                id_map_values = [ueid, ' ', ' ', ' ', ' ', ' ', ' ']
-                id_map[ueid] = [id_map_values]
-        sorted_list = sorted(id_map.items(), key=lambda d: int(d[0]))
-        for item in sorted_list:
-            #xprint_head(item)
-            for id_values in item[1]:
-                line = ''
-                for id_value in id_values:
-                    line = line + id_value + ' ' * (XConst.ID_OFFSET - len(id_value))
-                fw.write(line.strip() + '\n\n')
+        sorted_list = format_id_map(ueidcus, id_map)
+        write_id_map(fw, sorted_list)
 
     finally:
         if fw:
@@ -425,6 +448,10 @@ def find_and_show_id_map():
         if fr:
             fr.close()
     xprint_head('id map ( ' + str(count) + ' ) is in ' + XConst.ID_MAP_FILE + '\n')
+
+
+def find_warn_logs():
+    xprint_head('finding warn logs...')
 
 
 def action_log_find_context(cmds, key):
@@ -435,6 +462,7 @@ def action_log_find_context(cmds, key):
 
     if num_cmd == 1 and key == XKey.ENTER:
         find_and_show_id_map()
+        find_warn_logs()
 
         return {'flag': True, 'new_input_cmd': ''}
 

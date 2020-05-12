@@ -343,26 +343,6 @@ def create_grep_output():
         child.communicate()
 
 
-def find_and_show_ueidcu():
-    xprint_new_line('ues are finding...')
-    create_grep_output()
-
-    command = 'cat ' + XConst.GREP_ID_FILE + ' | sed -nr \"s/.*' + XConst.IDS[0] + ':([0-9]+).*/\\1/p\" | sort -u'
-    #xprint_head(command)
-    child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-    id_output = child.communicate()[0].split()
-    id_output = sorted(id_output, key=lambda d: int(d))
-    #xprint_head(id_output)
-    xprint_head('[UEIDCU] ( ' + str(len(id_output)) + ' )', XPrintStyle.YELLOW)
-    id_str = ''
-    for ueid in id_output:
-        id_str = id_str + str(ueid) + ','
-    if id_str[-1] == ',':
-        id_str = id_str[:-1]
-    xprint_head(id_str + '\n')
-    return id_output
-
-
 def write_head_in_id_map_file(f):
     head = ''
     for id_name in XConst.IDS:
@@ -371,44 +351,79 @@ def write_head_in_id_map_file(f):
     f.write(head)
 
 
-def find_and_show_id_map(id_output):
-    xprint_head('id map is finding...')
+def show_ueidcu(ueidcus):
+    xprint_head('[UEIDCU] ( ' + str(len(ueidcus)) + ' )', XPrintStyle.YELLOW)
+    id_str = ''
+    for ueid in ueidcus:
+        id_str = id_str + str(ueid) + ','
+    if id_str[-1] == ',':
+        id_str = id_str[:-1]
+    xprint_head(id_str + '\n')
+
+
+def find_and_show_id_map():
+    xprint_new_line('finding ues...')
     create_grep_output()
     count = 0
+    id_map_history = []
+    id_map = {}
+    ueidcus = []
     try:
-        f = open(XConst.ID_MAP_FILE, 'w')
-        write_head_in_id_map_file(f)
-        for ueid in id_output:
-            key = XConst.IDS[0] + ':' + ueid + ','
-            command = 'cat ' + XConst.GREP_ID_FILE + ' | sed -nr \"s/.*\[(' + key + '.+[0-9]+)\].+/\\1/p\" | sort -u'
-            child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-            id_map_output = child.communicate()[0].replace(' ', '').split()
-            for id_map in id_map_output:
-                line = ueid + ' ' * (XConst.ID_OFFSET - len(ueid))
-                #xprint_head(id_map)
-                id_map_index = 1
-                id_map_values = [ueid, ' ', ' ', ' ', ' ', ' ', ' ']
-                for id_name in XConst.IDS[1:]:
-                    obj = re.search(r'.*' + id_name + ':([0-9]+).*', id_map)
-                    if obj:
-                        id_map_values[id_map_index] = obj.group(1)
-                        line = line + obj.group(1) + ' ' * (XConst.ID_OFFSET - len(obj.group(1)))
-                    else:
-                        line = line + ' ' * XConst.ID_OFFSET
-                    id_map_index = id_map_index + 1
-                #xprint_head(id_map_values)
-                f.write(line)
+        fw = open(XConst.ID_MAP_FILE, 'w')
+        fr = open(XConst.GREP_ID_FILE, 'r')
+        write_head_in_id_map_file(fw)
+        for read_line in fr:
+            ueidcu = ''
+            key = XConst.IDS[0] + ':([0-9]+)'
+            obj = re.search(r'.+' + key + '.*', read_line)
+            if obj:
+                ueidcu = obj.group(1).replace(' ', '')
+                if not ueidcu in ueidcus:
+                    ueidcus.append(ueidcu)
+
+            key = XConst.IDS[0] + ':[0-9]+,.+[0-9]+'
+            obj = re.search(r'.+\[(' + key + ')\].+', read_line)
+            if not obj:
+                continue
+            id_map_output = obj.group(1).replace(' ', '')
+            if id_map_output in id_map_history:
+                continue
+            id_map_history.append(id_map_output)
+            id_map_index = 0
+            id_map_values = [' ', ' ', ' ', ' ', ' ', ' ', ' ']
+            for id_name in XConst.IDS:
+                obj = re.search(r'.*' + id_name + ':([0-9]+).*', id_map_output)
+                if obj:
+                    id_map_values[id_map_index] = obj.group(1)
+                id_map_index = id_map_index + 1
+            if id_map_values[0] != ' ':
+                if id_map_values[0] in id_map:
+                    id_map[id_map_values[0]].append(id_map_values)
+                else:
+                    id_map[id_map_values[0]] = [id_map_values]
                 count = count + 1
 
-            if len(id_map_output) == 0:
-                f.write(line)
-                id_map_values = [ueid, ' ', ' ', ' ', ' ', ' ', ' ']
-                #xprint_head(id_map_values)
+        ueidcus = sorted(ueidcus, key=lambda d: int(d))
+        show_ueidcu(ueidcus)
 
-            #xprint_head(' ')
+        for ueid in ueidcus:
+            if not ueid in id_map:
+                id_map_values = [ueid, ' ', ' ', ' ', ' ', ' ', ' ']
+                id_map[ueid] = [id_map_values]
+        sorted_list = sorted(id_map.items(), key=lambda d: int(d[0]))
+        for item in sorted_list:
+            #xprint_head(item)
+            for id_values in item[1]:
+                line = ''
+                for id_value in id_values:
+                    line = line + id_value + ' ' * (XConst.ID_OFFSET - len(id_value))
+                fw.write(line.strip() + '\n\n')
+
     finally:
-        if f:
-            f.close()
+        if fw:
+            fw.close()
+        if fr:
+            fr.close()
     xprint_head('id map ( ' + str(count) + ' ) is in ' + XConst.ID_MAP_FILE + '\n')
 
 
@@ -419,8 +434,7 @@ def action_log_find_context(cmds, key):
         num_cmd -= 1
 
     if num_cmd == 1 and key == XKey.ENTER:
-        id_output = find_and_show_ueidcu()
-        find_and_show_id_map(id_output)
+        find_and_show_id_map()
 
         return {'flag': True, 'new_input_cmd': ''}
 

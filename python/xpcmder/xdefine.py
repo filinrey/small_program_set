@@ -52,8 +52,6 @@ class XConst(object):
     CPRT_PREFIX_TYPE = 'NATIVE-gcc'
     CU_PREFIX_TYPE = 'NATIVE-gcc'
 
-    WARNING_LOG = ['WRN', 'WARN', 'WARNING']
-    ERROR_LOG = ['ERR', 'ERROR']
     CPUE_DIR_FILE_NAMES = [
         {
             'name': '*E007*',
@@ -135,6 +133,14 @@ class XConst(object):
         'cpnrt': CPNRT_DIR_FILE_NAMES,
     }
     ANALYZED_DIR = 'analyzed_result'
+    GREP_ID_FILE = ANALYZED_DIR + '/grep_ueIdCu.tmp'
+    ID_MAP_FILE = ANALYZED_DIR + '/id_map.tmp'
+    ID_OFFSET = 20
+    IDS = ['ueIdCu', 'gnbDuUeF1APId', 'gnbDuId', 'gnbCuUpUeE1APId', 'amfId', 'AMFSetID', 'amfUeNGAPId']
+    #[ueIdCu:0, gnbDuUeF1APId:1, gnbDuId:0, gnbCuUpUeE1APId:1,amfId:1, amfUeNGAPId:8589942570]
+    #[ueIdCu:0, gnbDuUeF1APId:1, gnbDuId:0, gnbCuUpUeE1APId:0,amfId:2,AMFSetID: 1, amfUeNGAPId:224]
+    WARNING_LOG = ['WRN', 'WARN', 'WARNING']
+    ERROR_LOG = ['ERR', 'ERROR']
 
 
 class XPrintStyle(object):

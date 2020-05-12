@@ -333,6 +333,85 @@ def show_log_find_context_help():
     xprint_head('\t           -> find all files which contains text of cpue')
 
 
+def create_grep_output():
+    if not os.path.exists(XConst.GREP_ID_FILE):
+        if not os.path.exists(XConst.ANALYZED_DIR):
+            os.mkdir(XConst.ANALYZED_DIR)
+        command = 'grep -nrIE \"ueIdCu:[0-9]+\" --exclude-dir=' + XConst.ANALYZED_DIR + ' > ' + XConst.GREP_ID_FILE
+        #xprint_head(command)
+        child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        child.communicate()
+
+
+def find_and_show_ueidcu():
+    xprint_new_line('ues are finding...')
+    create_grep_output()
+
+    command = 'cat ' + XConst.GREP_ID_FILE + ' | sed -nr \"s/.*' + XConst.IDS[0] + ':([0-9]+).*/\\1/p\" | sort -u'
+    #xprint_head(command)
+    child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    id_output = child.communicate()[0].split()
+    id_output = sorted(id_output, key=lambda d: int(d))
+    #xprint_head(id_output)
+    xprint_head('[UEIDCU] ( ' + str(len(id_output)) + ' )', XPrintStyle.YELLOW)
+    id_str = ''
+    for ueid in id_output:
+        id_str = id_str + str(ueid) + ','
+    if id_str[-1] == ',':
+        id_str = id_str[:-1]
+    xprint_head(id_str + '\n')
+    return id_output
+
+
+def write_head_in_id_map_file(f):
+    head = ''
+    for id_name in XConst.IDS:
+        head = head + id_name + ' ' * (XConst.ID_OFFSET - len(id_name))
+    head = head + '\n'
+    f.write(head)
+
+
+def find_and_show_id_map(id_output):
+    xprint_head('id map is finding...')
+    create_grep_output()
+    count = 0
+    try:
+        f = open(XConst.ID_MAP_FILE, 'w')
+        write_head_in_id_map_file(f)
+        for ueid in id_output:
+            key = XConst.IDS[0] + ':' + ueid + ','
+            command = 'cat ' + XConst.GREP_ID_FILE + ' | sed -nr \"s/.*\[(' + key + '.+[0-9]+)\].+/\\1/p\" | sort -u'
+            child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            id_map_output = child.communicate()[0].replace(' ', '').split()
+            for id_map in id_map_output:
+                line = ueid + ' ' * (XConst.ID_OFFSET - len(ueid))
+                #xprint_head(id_map)
+                id_map_index = 1
+                id_map_values = [ueid, ' ', ' ', ' ', ' ', ' ', ' ']
+                for id_name in XConst.IDS[1:]:
+                    obj = re.search(r'.*' + id_name + ':([0-9]+).*', id_map)
+                    if obj:
+                        id_map_values[id_map_index] = obj.group(1)
+                        line = line + obj.group(1) + ' ' * (XConst.ID_OFFSET - len(obj.group(1)))
+                    else:
+                        line = line + ' ' * XConst.ID_OFFSET
+                    id_map_index = id_map_index + 1
+                #xprint_head(id_map_values)
+                f.write(line)
+                count = count + 1
+
+            if len(id_map_output) == 0:
+                f.write(line)
+                id_map_values = [ueid, ' ', ' ', ' ', ' ', ' ', ' ']
+                #xprint_head(id_map_values)
+
+            #xprint_head(' ')
+    finally:
+        if f:
+            f.close()
+    xprint_head('id map ( ' + str(count) + ' ) is in ' + XConst.ID_MAP_FILE + '\n')
+
+
 def action_log_find_context(cmds, key):
     num_cmd = len(cmds)
     if cmds[num_cmd - 1] == '':
@@ -340,28 +419,8 @@ def action_log_find_context(cmds, key):
         num_cmd -= 1
 
     if num_cmd == 1 and key == XKey.ENTER:
-        xprint_new_line('ues are finding...')
-        if not os.path.exists(XConst.ANALYZED_DIR + '/grep_ueIdCu.tmp'):
-            if not os.path.exists(XConst.ANALYZED_DIR):
-                os.mkdir(XConst.ANALYZED_DIR)
-            command = 'grep -nrIE \"ueIdCu:[0-9]+\" --exclude-dir=' + XConst.ANALYZED_DIR + ' > ' + XConst.ANALYZED_DIR + '/grep_ueIdCu.tmp'
-            #xprint_head(command)
-            child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-            child.communicate()
-
-        command = 'cat ' + XConst.ANALYZED_DIR + '/grep_ueIdCu.tmp' + ' | sed -nr \"s/.*ueIdCu:([0-9]+).*/\\1/p\" | sort -u'
-        #xprint_head(command)
-        child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-        id_output = child.communicate()[0].split()
-        id_output = sorted(id_output, key=lambda d: int(d))
-        #xprint_head(id_output)
-        xprint_head('[UEIDCU] ( ' + str(len(id_output)) + ' )', XPrintStyle.YELLOW)
-        id_str = ''
-        for ueid in id_output:
-            id_str = id_str + str(ueid) + ','
-        if id_str[-1] == ',':
-            id_str = id_str[:-1]
-        xprint_head(id_str)
+        id_output = find_and_show_ueidcu()
+        find_and_show_id_map(id_output)
 
         return {'flag': True, 'new_input_cmd': ''}
 

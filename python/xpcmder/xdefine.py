@@ -137,10 +137,8 @@ class XConst(object):
     ID_MAP_FILE = ANALYZED_DIR + '/id_map.tmp'
     ID_OFFSET = 20
     IDS = ['ueIdCu', 'gnbDuUeF1APId', 'gnbDuId', 'gnbCuUpUeE1APId', 'amfId', 'AMFSetID', 'amfUeNGAPId']
-    #[ueIdCu:0, gnbDuUeF1APId:1, gnbDuId:0, gnbCuUpUeE1APId:1,amfId:1, amfUeNGAPId:8589942570]
-    #[ueIdCu:0, gnbDuUeF1APId:1, gnbDuId:0, gnbCuUpUeE1APId:0,amfId:2,AMFSetID: 1, amfUeNGAPId:224]
-    WARNING_LOG = ['WRN', 'WARN', 'WARNING']
-    ERROR_LOG = ['ERR', 'ERROR']
+    GREP_WARN_FILE = ANALYZED_DIR + '/warn_logs.tmp'
+    GREP_ERROR_FILE = ANALYZED_DIR + '/error_logs.tmp'
 
 
 class XPrintStyle(object):

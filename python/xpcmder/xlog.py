@@ -7,6 +7,7 @@ import shutil
 import zipfile
 import subprocess
 import datetime
+import difflib
 from xdefine import XKey, XConst, XPrintStyle
 from xlogger import xlogger
 from xprint import xprint_new_line, xprint_head, format_color_string
@@ -333,7 +334,7 @@ def show_log_find_context_help():
     xprint_head('\t           -> find all files which contains text of cpue')
 
 
-def create_grep_output():
+def create_grep_id_output():
     if not os.path.exists(XConst.GREP_ID_FILE):
         if not os.path.exists(XConst.ANALYZED_DIR):
             os.mkdir(XConst.ANALYZED_DIR)
@@ -419,7 +420,7 @@ def write_id_map(fw, sorted_list):
 
 def find_and_show_id_map():
     xprint_new_line('finding ues...')
-    create_grep_output()
+    create_grep_id_output()
     count = 0
     id_map_history = []
     id_map = {}
@@ -450,8 +451,111 @@ def find_and_show_id_map():
     xprint_head('id map ( ' + str(count) + ' ) is in ' + XConst.ID_MAP_FILE + '\n')
 
 
+def create_grep_warn_output():
+    if not os.path.exists(XConst.GREP_WARN_FILE):
+        if not os.path.exists(XConst.ANALYZED_DIR):
+            os.mkdir(XConst.ANALYZED_DIR)
+        command = 'grep -wrhIE \"\\[cp_ue\\]|\\[cp_if\\]\" --exclude-dir=' + XConst.ANALYZED_DIR
+        command = command + ' | grep -wE \"WRN|WARNING|warning\" > ' + XConst.GREP_WARN_FILE
+        #xprint_head(command)
+        child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        child.communicate()
+
+
+def create_grep_error_output():
+    if not os.path.exists(XConst.GREP_ERROR_FILE):
+        if not os.path.exists(XConst.ANALYZED_DIR):
+            os.mkdir(XConst.ANALYZED_DIR)
+        command = 'grep -wrhIE \"\\[cp_ue\\]|\\[cp_if\\]\" --exclude-dir=' + XConst.ANALYZED_DIR
+        command = command + ' | grep -wE \"ERR|ERROR|error\" > ' + XConst.GREP_ERROR_FILE
+        #xprint_head(command)
+        child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        child.communicate()
+
+
+def collect_similar_logs(path):
+    exist_lines = []
+    count = 0
+    try:
+        fr = open(path, 'r')
+        for read_line in fr:
+            obj = re.search(r'.+\.[hc]pp[#:][0-9]+[:]{0,1}(.+)', read_line)
+            if not obj:
+                continue
+            line = obj.group(1)
+
+            if len(exist_lines) == 0:
+                similar_lines = []
+                exist_line = [line, 0, similar_lines, read_line]
+                exist_lines.append(exist_line)
+                continue
+
+            no_digit_line = re.sub(r'[0-9]', '', line)
+
+            ratio = 0.0
+            match_ratio = 0.93
+            for exist_line in exist_lines:
+                no_digit_exist_line = re.sub(r'[0-9]', '', exist_line[0])
+                if no_digit_line == no_digit_exist_line:
+                    exist_line[1] = exist_line[1] + 1
+                    exist_line[2].append(read_line)
+                    ratio = match_ratio
+                    break
+                ratio = difflib.SequenceMatcher(None, line, exist_line[0]).quick_ratio()
+                if ratio >= match_ratio:
+                    exist_line[1] = exist_line[1] + 1
+                    exist_line[2].append(read_line)
+                    break
+            if ratio < match_ratio:
+                exist_lines.append([line, 0, [], read_line])
+
+    finally:
+        if fr:
+            fr.close()
+    return exist_lines
+
+
+def show_and_write_similar_logs(path, title, exist_lines):
+    try:
+        fw = open(path, 'w')
+        write_line = '[' + title + ']( ' + str(len(exist_lines)) + ' )'
+        xprint_head(write_line, XPrintStyle.YELLOW)
+        fw.write(write_line + '\n')
+
+        for exist_line in exist_lines:
+            write_line = str(exist_line[1]) + ' similar logs'
+
+            xprint_head(write_line, XPrintStyle.BLUE)
+            xprint_head(exist_line[0])
+
+            fw.write(write_line + '\n')
+            fw.write(exist_line[3].replace('\n', '') + '\n')
+
+            for similiar_line in exist_line[2]:
+                fw.write(similiar_line.replace('\n', '') + '\n')
+            xprint_head(' ')
+            fw.write('\n')
+    finally:
+        if fw:
+            fw.close()
+
+
 def find_warn_logs():
     xprint_head('finding warn logs...')
+    create_grep_warn_output()
+    xprint_head('collecting similar warn logs...')
+    exist_lines = collect_similar_logs(XConst.GREP_WARN_FILE)
+    show_and_write_similar_logs(XConst.GREP_WARN_FILE + '_similar', 'WARN', exist_lines)
+    xprint_head(' ')
+
+
+def find_error_logs():
+    xprint_head('finding error logs...')
+    create_grep_error_output()
+    xprint_head('collecting similar error logs...')
+    exist_lines = collect_similar_logs(XConst.GREP_ERROR_FILE)
+    show_and_write_similar_logs(XConst.GREP_ERROR_FILE + '_similar', 'ERROR', exist_lines)
+    xprint_head(' ')
 
 
 def action_log_find_context(cmds, key):
@@ -463,6 +567,7 @@ def action_log_find_context(cmds, key):
     if num_cmd == 1 and key == XKey.ENTER:
         find_and_show_id_map()
         find_warn_logs()
+        find_error_logs()
 
         return {'flag': True, 'new_input_cmd': ''}
 

@@ -451,26 +451,23 @@ def find_and_show_id_map():
     xprint_head('id map ( ' + str(count) + ' ) is in ' + XConst.ID_MAP_FILE + '\n')
 
 
-def create_grep_warn_output():
-    if not os.path.exists(XConst.GREP_WARN_FILE):
+def create_grep_logs_output(path, parttern):
+    if not os.path.exists(path):
         if not os.path.exists(XConst.ANALYZED_DIR):
             os.mkdir(XConst.ANALYZED_DIR)
-        command = 'grep -wrhIE \"\\[cp_ue\\]|\\[cp_if\\]\" --exclude-dir=' + XConst.ANALYZED_DIR
-        command = command + ' | grep -wE \"WRN|WARNING|warning\" > ' + XConst.GREP_WARN_FILE
-        #xprint_head(command)
+        cu = '\\[cp_ue\\]|\\[cp_if\\]|\\[cp_nb\\]|\\[cp_cl\\]|\\[cp_sb\\]|\\[cp_sctp\\]'
+        command = 'grep -wrhIE \"' + cu + '\" --exclude-dir=' + XConst.ANALYZED_DIR
+        command = command + ' | grep -wE \"' + parttern + '\" > ' + path
         child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
         child.communicate()
+
+
+def create_grep_warn_output():
+    create_grep_logs_output(XConst.GREP_WARN_FILE, 'WRN|WARNING|warn|warning')
 
 
 def create_grep_error_output():
-    if not os.path.exists(XConst.GREP_ERROR_FILE):
-        if not os.path.exists(XConst.ANALYZED_DIR):
-            os.mkdir(XConst.ANALYZED_DIR)
-        command = 'grep -wrhIE \"\\[cp_ue\\]|\\[cp_if\\]\" --exclude-dir=' + XConst.ANALYZED_DIR
-        command = command + ' | grep -wE \"ERR|ERROR|error\" > ' + XConst.GREP_ERROR_FILE
-        #xprint_head(command)
-        child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-        child.communicate()
+    create_grep_logs_output(XConst.GREP_ERROR_FILE, 'ERR|ERROR|err|error')
 
 
 def collect_similar_logs(path):

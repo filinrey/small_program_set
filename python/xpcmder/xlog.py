@@ -246,6 +246,9 @@ def analyze_output(extract_dir, output):
         relative_path = path[len(extract_dir):]
         if relative_path[0] == '/':
             relative_path = relative_path[1:]
+
+        if re.match(r'' + XConst.ANALYZED_DIR, relative_path):
+            continue
         if os.path.isdir(relative_path):
             dirs.append(relative_path)
         if os.path.isfile(relative_path):
@@ -271,7 +274,6 @@ def show_output(dirs, files, log_type):
     other_files = []
     sorted_files = sorted(files.items(), key=lambda d: len(d[1]), reverse=True)
     for item in sorted_files:
-        #xprint_head(item)
         if len(item[1]) == 1:
             other_files.append(item[1][0])
             continue
@@ -292,8 +294,8 @@ def show_output(dirs, files, log_type):
         xprint_head(' ')
         analyzed_result = '\n '
 
-    command = 'mkdir -p ' + XConst.ANALYZED_DIR + ' && '
-    command = 'echo ' + analyzed_result + ' > ' + XConst.ANALYZED_DIR + '/' + log_type + '_relative_files'
+    command = 'mkdir -p ' + XConst.ANALYZED_DIR + ' && echo ' + analyzed_result
+    command = command + ' > ' + XConst.ANALYZED_DIR + '/' + log_type + '_relative_files'
     subprocess.call(command, shell=True)
 
 
@@ -384,6 +386,33 @@ def find_id_map(read_line, id_map_history):
     return True, id_map_output
 
 
+def check_and_insert_to_id_map(id_map, target_item):
+    same_items = []
+    source_index = 0
+    for source_item in id_map[target_item[0]]:
+        index = 0
+        is_same = True
+        for value in source_item:
+            if target_item[index] != ' ' and value != ' ' and target_item[index] != value:
+                is_same = False
+                break
+            if target_item[index] == ' ' and value != ' ':
+                is_same = False
+                break
+            index = index + 1
+        if is_same:
+            same_items.append(source_index)
+        source_index = source_index + 1
+
+    if len(same_items) > 0:
+        for item in same_items:
+            del id_map[target_item[0]][item]
+        return 0
+
+    id_map[target_item[0]].append(target_item)
+    return 1
+
+
 def add_id_map(id_map_output, id_map, count):
     id_map_index = 0
     id_map_values = [' ', ' ', ' ', ' ', ' ', ' ', ' ']
@@ -394,10 +423,10 @@ def add_id_map(id_map_output, id_map, count):
         id_map_index = id_map_index + 1
     if id_map_values[0] != ' ':
         if id_map_values[0] in id_map:
-            id_map[id_map_values[0]].append(id_map_values)
+            count = count + check_and_insert_to_id_map(id_map, id_map_values)
         else:
             id_map[id_map_values[0]] = [id_map_values]
-        count = count + 1
+            count = count + 1
     return count
 
 

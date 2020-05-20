@@ -448,7 +448,7 @@ def write_id_map(fw, sorted_list):
 
 
 def find_and_show_id_map():
-    xprint_new_line('finding ues...')
+    xprint_head('finding ues...')
     create_grep_id_output()
     count = 0
     id_map_history = []
@@ -591,7 +591,9 @@ def action_log_find_context(cmds, key):
         num_cmd -= 1
 
     if num_cmd == 1 and key == XKey.ENTER:
-        find_and_show_id_map()
+        xprint_new_line(' ')
+        if cmds[0] == "cpue":
+            find_and_show_id_map()
         find_warn_logs()
         find_error_logs()
 

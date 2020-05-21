@@ -369,7 +369,7 @@ def show_ueidcu(ueidcus):
     id_str = ''
     for ueid in ueidcus:
         id_str = id_str + str(ueid) + ','
-    if id_str[-1] == ',':
+    if len(id_str) > 0 and id_str[-1] == ',':
         id_str = id_str[:-1]
     xprint_head(id_str + '\n')
 

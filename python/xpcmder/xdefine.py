@@ -133,6 +133,7 @@ class XConst(object):
         'cpnrt': CPNRT_DIR_FILE_NAMES,
     }
     ANALYZED_DIR = 'analyzed_result'
+    UEIDCUS_DIR = ANALYZED_DIR + '/ueidcus'
     GREP_ID_FILE = ANALYZED_DIR + '/grep_ueIdCu.tmp'
     ID_MAP_FILE = ANALYZED_DIR + '/id_map.tmp'
     ID_OFFSET = 20

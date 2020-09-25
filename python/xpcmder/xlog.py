@@ -405,7 +405,8 @@ def check_and_insert_to_id_map(id_map, target_item):
         source_index = source_index + 1
 
     if len(same_items) > 0:
-        for item in same_items:
+        sorted_items = sorted(same_items, key=lambda d: int(d), reverse=True)
+        for item in sorted_items:
             del id_map[target_item[0]][item]
         return 0
 
@@ -478,6 +479,8 @@ def find_and_show_id_map():
         if fr:
             fr.close()
     xprint_head('id map ( ' + str(count) + ' ) is in ' + XConst.ID_MAP_FILE + '\n')
+
+    return ueidcus
 
 
 def create_grep_logs_output(path, parttern):
@@ -584,6 +587,81 @@ def find_error_logs():
     xprint_head(' ')
 
 
+def sort_contents_in_file(path, cpue_dir, ueidcu):
+    sorted_path = path + "_sorted"
+    time_content_map = {}
+    thread_ids = {}
+    fr = open(path, 'r')
+    fw = open(sorted_path, 'w')
+    xprint_head('start to sort ' + path)
+    for read_line in fr:
+        line = read_line.strip()
+        if line == '':
+            continue
+        #print('line is ' + line)
+        obj = re.search(r'.+<([0-9:.\-TZ]+)>.+', line)
+        if not obj:
+            #print('should happen error in line ' + line)
+            continue
+        time = obj.group(1)
+        #print('time is ' + time)
+        if time in time_content_map:
+            #print('meet same time ' + time)
+            #print('new same time line is ' + line)
+            time_content_map[time].append([line])
+        else:
+            time_content_map[time] = [[line]]
+
+        obj = re.search(r'.*\[cp_ue\]\[([0-9]+)\].*', line)
+        if not obj:
+            continue
+        thread_id = obj.group(1)
+        if not thread_id in thread_ids:
+            cpue_file = cpue_dir + '/ueidcu_' + ueidcu + '_cpue_' + thread_id
+            thread_ids[thread_id] = open(cpue_file, 'w')
+
+    sorted_list = sorted(time_content_map.items(), key=lambda d: d[0])
+
+    for item in sorted_list:
+        for lines in item[1]:
+            #print('lines is ' + lines)
+            for line in lines:
+                fw.write(line.strip() + '\n')
+                obj = re.search(r'.*\[cp_ue\]\[([0-9]+)\].*', line)
+                if not obj:
+                    continue
+                thread_id = obj.group(1)
+                thread_ids[thread_id].write(line.strip() + '\n')
+
+    fr.close()
+    fw.close()
+    for value in thread_ids.values():
+        value.close()
+
+
+def find_all_ueidcus(ueidcus):
+    os.system('mkdir -p ' + XConst.UEIDCUS_DIR)
+    ueidcu_dir = XConst.UEIDCUS_DIR + '/ueidcus'
+    ueidcu_cpue_dir = XConst.UEIDCUS_DIR + '/cpues'
+    for ueidcu in ueidcus:
+        ueidcu_file = ueidcu_dir + '/ueidcu_' + ueidcu
+        if os.path.exists(ueidcu_file):
+            continue
+        xprint_head('start to collect ' + ueidcu_file)
+        command = 'mkdir -p ' + ueidcu_dir + ' ' + ueidcu_cpue_dir + ' && '
+        command = command + 'grep -nwri \"ueidcu:' + ueidcu + '\" ' + XConst.GREP_ID_FILE
+        command = command + ' > ' + ueidcu_file + ' &'
+        os.system(command)
+        #child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+        #child.communicate()
+
+    for ueidcu in ueidcus:
+        ueidcu_file = ueidcu_dir + '/ueidcu_' + ueidcu
+        if not os.path.exists(ueidcu_file):
+            continue
+        sort_contents_in_file(ueidcu_file, ueidcu_cpue_dir, ueidcu)
+
+
 def action_log_find_context(cmds, key):
     num_cmd = len(cmds)
     if cmds[num_cmd - 1] == '':
@@ -592,14 +670,244 @@ def action_log_find_context(cmds, key):
 
     if num_cmd == 1 and key == XKey.ENTER:
         xprint_new_line(' ')
+        ueidcus = []
         if cmds[0] == "cpue":
-            find_and_show_id_map()
+            ueidcus = find_and_show_id_map()
         find_warn_logs()
         find_error_logs()
+        find_all_ueidcus(ueidcus)
 
         return {'flag': True, 'new_input_cmd': ''}
 
     show_log_find_context_help()
+
+
+def show_log_find_message_help():
+    xprint_new_line('\t# log find message', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # log find message')
+    xprint_head('\t           -> find all messages with id')
+
+
+def statictis_messages_count(message):
+    command = 'grep -nwri \"' + message + '\" | wc -l'
+    child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    output = child.communicate()[0].split()
+    xprint_head(message + ' -count= ' + output[0])
+
+
+def statictis_messages_with_id(message, sub_string):
+    command = 'grep -nwri \"' + message + '\"'
+    child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    output = child.communicate()[0]
+    output = output.split('\n')
+    ids = []
+    for item in output:
+        #xprint_head(item)
+        key = sub_string + ':([\ ]{0,1}[0-9]+)'
+        obj = re.search(r'.+' + key + '.*', item)
+        if obj:
+            ids.append(obj.group(1).replace(' ', ''))
+    #xprint_head(ids)
+    return ids
+
+
+def statictis_messages(messages):
+    for message in messages:
+        xprint_head('statictis ' + message['message'])
+        statictis_messages_count(message['message'])
+        if message['sub'] == False:
+            continue
+        message['ids'] = statictis_messages_with_id(message['message'], message['sub_string'])
+        #xprint_head(message['ids'])
+
+
+def statictis_2_messages_diff(message1, ids1, message2, ids2):
+    diff_ids = []
+    xprint_head('len of ids1 is ' + str(len(ids1)) + ', len of ids2 is ' + str(len(ids2)))
+    for id1 in ids1:
+        find_flag = False
+        for id2 in ids2:
+            if id1 == id2:
+                #xprint_head('id1 is ' + id1 + ' id2 is ' + id2)
+                find_flag = True
+                break
+        if find_flag == False:
+            diff_ids.append(id1)
+    xprint_head(diff_ids)
+
+
+def statictis_messages_diff(messages):
+    #xprint_head(messages[1]['ids'])
+    statictis_2_messages_diff(messages[1]['message'], messages[1]['ids'], messages[2]['message'], messages[2]['ids'])
+
+
+def action_log_find_message(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 0 and key == XKey.ENTER:
+        xprint_new_line(' ')
+        messages = [
+            {
+                'message': 'Received itf::l2::lo::user::CcchDataReceiveInd',
+                'sub': False,
+                'sub_string': '',
+                'ids': [],
+            },
+            {
+                'message': 'sending itf::l2::ps::user::UserSetupReq',
+                'sub': True,
+                'sub_string': 'gnbDuUeF1APId',
+                'ids': [],
+            },
+            {
+                'message': 'Received itf::l2::ps::user::UserSetupResp',
+                'sub': True,
+                'sub_string': 'gnbDuUeF1APId',
+                'ids': [],
+            },
+            {
+                'message': 'Sending itf::l2::lo::user::UserSetupReq',
+                'sub': True,
+                'sub_string': 'gnbDuUeF1APId',
+                'ids': [],
+            },
+            {
+                'message': 'Received itf::l2::lo::user::UserSetupResp',
+                'sub': True,
+                'sub_string': 'gnbDuUeF1APId',
+                'ids': [],
+            },
+            {
+                'message': 'Sending itf::l2::hi::du::user::BearerSetupReq',
+                'sub': True,
+                'sub_string': 'gnbDuUeF1APId',
+                'ids': [],
+            },
+            {
+                'message': 'Received itf::l2::hi::du::user::BearerSetupResp',
+                'sub': True,
+                'sub_string': 'gnbDuUeF1APId',
+                'ids': [],
+            },
+            {
+                'message': 'sending itf::l2::lo::user::CcchDataSendReq',
+                'sub': True,
+                'sub_string': 'gnbDuUeF1APId',
+                'ids': [],
+            },
+            {
+                'message': 'SendInitialContextSetupResponse',
+                'sub': False,
+                'sub_string': '',
+                'ids': [],
+            },
+        ]
+        statictis_messages(messages)
+        statictis_messages_diff(messages)
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_log_find_message_help()
+
+
+def show_log_find_lifecycle_help():
+    xprint_new_line('\t# log find lifecycle [DIR]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # log find lifecycle ./')
+    xprint_head('\t           -> find all lifecycle in current directory')
+
+
+def find_lifecycle(log_dir):
+    no_finished_files = []
+    tree = os.walk(log_dir)
+    for root, dirs, files in tree:
+        for item in files:
+            path = os.path.join(root, item)
+            path = os.path.abspath(path)
+            file_full_name = os.path.basename(path)
+            file_name = os.path.splitext(file_full_name)[0]
+            file_ext = os.path.splitext(file_full_name)[1]
+
+            if not os.path.isfile(path):
+                continue
+            xprint_head('finding lifecycle in ' + path)
+
+            started_num = 0
+            finished_num = 0
+            lifecycle_flag = 0
+            fr = open(path, 'r')
+            for read_line in fr:
+                obj = re.search(r'Lifecycle of UE started', read_line)
+                if obj:
+                    started_num = started_num + 1
+                    lifecycle_flag = 1
+                obj = re.search(r'Lifecycle of UE finished', read_line)
+                if obj:
+                    finished_num = finished_num + 1
+                    lifecycle_flag = 2
+            fr.close()
+
+            if lifecycle_flag < 2:
+                no_finished_files.append(item)
+            elif finished_num < started_num:
+                no_finished_files.append(item)
+            '''
+            command = 'grep -nwr \"Lifecycle of UE finished\" ' + path + ' | wc -l'
+            child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            output = child.communicate()[0]
+            finished_num = 0
+            if len(output) > 0:
+                finished_num = int(output)
+            command = 'grep -nwr \"Lifecycle of UE started\" ' + path + ' | wc -l'
+            child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            output = child.communicate()[0]
+            started_num = 0
+            if len(output) > 0:
+                started_num = int(output)
+            if finished_num < started_num:
+                no_finished_files.append(item)
+            '''
+    xprint_head('no finished files( ' + str(len(no_finished_files)) + ' ):')
+    print_str = ''
+    for no_finished_file in no_finished_files:
+        obj = re.search(r'ueidcu_([0-9]+)_cpue_([0-9]+)', no_finished_file)
+        if not obj:
+            continue
+        ueidcu = obj.group(1)
+        print_str = print_str + ueidcu + ','
+        #thread_id = obj.group(2)
+        #xprint_head(ueidcu + '_' + thread_id + ',')
+    xprint_head(print_str)
+
+
+def collect_lifecycle_started_finished(log_dir):
+    lifecycle_dir = log_dir + '/lifecycle'
+    lifecycle_file = lifecycle_dir + '/started_finished.log'
+    command = 'mkdir -p ' + lifecycle_dir + ' && '
+    command = command + 'grep -nwr \"Lifecycle of UE\" --exclude-dir=lifecycle'
+    command = command + ' > ' + lifecycle_file
+    child = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    output = child.communicate()[0]
+    sort_contents_in_file(lifecycle_file, lifecycle_dir, 'x')
+
+
+def action_log_find_lifecycle(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 1 and key == XKey.ENTER:
+        if not os.path.exists(cmds[0]):
+            xprint_new_line('\t' + cmdss[0] + ' is not exists')
+            return {'flag': True, 'new_input_cmd': ''}
+        xprint_new_line('')
+        find_lifecycle(cmds[0])
+        collect_lifecycle_started_finished(cmds[0])
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_log_find_lifecycle_help()
 
 
 def show_log_opendir_help():
@@ -623,6 +931,29 @@ def action_log_opendir(cmds, key):
     show_log_opendir_help()
 
 
+def show_log_sort_help():
+    xprint_new_line('\t# log sort [FILE]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # log sort file')
+    xprint_head('\t           -> sort the contents of this file by datetime')
+
+
+def action_log_sort(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 1 and key == XKey.ENTER:
+        if not os.path.exists(cmds[0]):
+            xprint_new_line('\t' + cmdss[0] + ' is not exists')
+            return {'flag': True, 'new_input_cmd': ''}
+        sort_contents_in_file(cmds[0], './', 'x')
+
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_log_sort_help()
+
+
 xlog_action = {
     'name': 'log',
     'sub_cmds':
@@ -643,11 +974,23 @@ xlog_action = {
                     'name': 'context',
                     'action': action_log_find_context,
                 },
+                {
+                    'name': 'message',
+                    'action': action_log_find_message,
+                },
+                {
+                    'name': 'lifecycle',
+                    'action': action_log_find_lifecycle,
+                },
             ],
         },
         {
             'name': 'opendir',
             'action': action_log_opendir,
+        },
+        {
+            'name': 'sort',
+            'action': action_log_sort,
         },
     ],
 }

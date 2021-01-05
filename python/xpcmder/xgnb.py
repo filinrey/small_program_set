@@ -94,10 +94,144 @@ def action_gnb_codeformat(cmds, key):
     show_gnb_codeformat_help()
 
 
+def show_gnb_mock_help():
+    xprint_new_line('\t# gnb mock [PATH]', XPrintStyle.YELLOW)
+    xprint_head('\tExample 1: # gnb mock a/b.cpp')
+    xprint_head('\t           -> create mock file for a/b.cpp')
+
+
+def parse_object(line, obj_type, obj_name, fw):
+    obj = re.match(r'(struct) (\w+)|(class) (\w+)', line)
+    if obj:
+        fw.write(obj.group(1) + ' ' + obj.group(2) + 'Mock : public ' + obj.group(2) + '\n')
+        fw.write('{\n')
+        return obj.group(1), obj.group(2), True
+    return obj_type, obj_name, False
+
+
+def parse_attribute(line, is_mock, is_match, fw):
+    if re.match(r'public:$', line):
+        fw.write('public:\n')
+        return True, True
+    if re.match(r'private:$|protected:$', line):
+        return False, True
+    return is_mock, (False | is_match)
+
+
+def parse_object_end(line, fw):
+    if re.match(r'\};', line):
+        fw.write('};\n')
+        return True
+    return False
+
+
+def parse_comments(line, is_match):
+    new_line = re.sub(r'//.*$', '', line.strip())
+    if len(new_line) == 0:
+        return True
+    return (False | is_match)
+
+
+def parse_full_line(line, is_func):
+    left_bracket_num = line.count('(')
+    right_bracket_num = line.count(')')
+    semicolon_num = line.count(';')
+
+    if left_bracket_num * right_bracket_num * semicolon_num == 1:
+        return True, True
+    if left_bracket_num == 1:
+        return True, False
+    if right_bracket_num == 1 and semicolon_num == 0:
+        return is_func, False
+    if semicolon_num == 1:
+        return is_func, True
+    return is_func, False
+
+
+def parse_function(full_line, fw):
+    new_line = re.sub(r'[ ]{2,}', ' ', full_line)
+    new_line = re.sub(r' ,', ',', new_line)
+    new_line = re.sub(r', ', ',', new_line)
+    #xprint_head(new_line)
+    obj = re.match(r'(.+) (\w+)\((.*)\)(.*);$', new_line)
+    if not obj:
+        return
+
+    mock_line = 'MOCK_METHOD('
+    mock_line = mock_line + obj.group(1) + ', ' + obj.group(2)
+    mock_line = mock_line + ', (' + obj.group(3) + ')'
+    func_types = ''
+    if re.search(r'const', obj.group(4)):
+        mock_line = mock_line + ', (const)'
+    mock_line = mock_line + ');'
+    xprint_head(mock_line)
+    fw.write(mock_line + '\n')
+
+
+def create_mock_file(path, mock_path):
+    obj_name = ''
+    obj_type = ''
+    is_mock = True
+    is_func = False
+
+    fr = open(path, 'r')
+    fw = open(mock_path, 'w')
+    full_line = ''
+    line = fr.readline()
+    while line:
+        if parse_object_end(line, fw):
+            break
+        obj_type, obj_name, is_match = parse_object(line, obj_type, obj_name, fw)
+        is_mock, is_match = parse_attribute(line, is_mock, is_match, fw)
+        is_match = parse_comments(line, is_match)
+        if is_match or not is_mock:
+            full_line = ''
+            line = fr.readline()
+            continue
+        is_func, is_full = parse_full_line(line, is_func)
+        new_line = re.sub(r'//.*$', '', line.strip())
+        full_line = full_line + new_line
+        if is_full:
+            #xprint_head('-' * 32)
+            #xprint_head(full_line)
+            parse_function(full_line, fw)
+            full_line = ''
+
+        line = fr.readline()
+
+    fr.close()
+    fw.close()
+
+
+def action_gnb_mock(cmds, key):
+    num_cmd = len(cmds)
+    if cmds[num_cmd - 1] == '':
+        del cmds[num_cmd - 1]
+        num_cmd -= 1
+
+    if num_cmd == 1 and key == XKey.ENTER:
+        path = cmds[0]
+        if not os.path.exists(path):
+            xprint_new_line('\t' + path + ' is not exists')
+            return {'flag': True, 'new_input_cmd': ''}
+        name, ext = os.path.splitext(path)
+        mock_path = name + 'Mock' + ext
+        xprint_new_line('start to create mock file')
+        create_mock_file(path, mock_path)
+
+        return {'flag': True, 'new_input_cmd': ''}
+
+    show_gnb_mock_help()
+
+
 xgnb_action = {
     'name': 'gnb',
     'sub_cmds':
     [
+        {
+            'name': 'mock',
+            'action': action_gnb_mock,
+        },
         {
             'name': 'codeformat',
             'action': action_gnb_codeformat,

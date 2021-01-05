@@ -1,8 +1,8 @@
 #!/bin/bash
 
-log_file="index_opengrok.sh.log"
+log_file="/home/fenghxu/small_program_set/shell/small_tools/index_opengrok.sh.log"
 opengrok_dir="/var/fpwork/fenghxu/opengrok"
-project_dir="$opengrok_dir/src/nokia"
+project_dir="$opengrok_dir/src"
 
 function seconds_to_time()
 {
@@ -28,11 +28,11 @@ do
     cur_day=`date +%d`
     cur_hour=`date +%H`
     echo "cur_hour = $cur_hour"
-    if [[ $cur_hour != 18 ]]; then
-        log "$cur_hour clock, sleep 1 hour"
-        sleep 1h
-        continue
-    fi
+    #if [[ $cur_hour != 18 ]]; then
+    #    log "$cur_hour clock, sleep 1 hour"
+    #    sleep 1h
+    #    continue
+    #fi
     is_exist=`ps aux | grep opengrok-indexer | grep -v grep`
     if [[ -n "$is_exist" ]]; then
         log "opengrok-indexer is running, sleep 1 hour"
@@ -45,11 +45,13 @@ do
     dirs=`dir $project_dir`
     for d in $dirs
     do
-        log "enter $d and rebase"
-        cd $d/gnb
-        pwd
-        git pull --rebase
-        cd -
+        if [[ -d $d && -d $d/gnb/.git ]]; then
+            log "enter $d and rebase"
+            cd $d/gnb
+            pwd
+            git pull --rebase
+            cd -
+        fi
     done
 
     if [[ ! -d $opengrok_dir/etc ]]; then
@@ -80,9 +82,7 @@ do
     log "opengrok-indexer take $seconds seconds ( $gap )"
 
     sudo /usr/local/tomcat/bin/shutdown.sh
-    sudo /usr/local/tomcat/bin/startup.sh
     sleep 1s
-    sudo /usr/local/tomcat/bin/shutdown.sh
     sudo /usr/local/tomcat/bin/startup.sh
 
     now_day=`date +%d`

@@ -3,6 +3,13 @@
 log_file="/home/fenghxu/small_program_set/shell/small_tools/index_opengrok.sh.log"
 opengrok_dir="/var/fpwork/fenghxu/opengrok"
 project_dir="$opengrok_dir/src"
+data_dir="$opengrok_dir/data"
+historycache_dir="$data_dir/historycache"
+#url="http://10.183.67.177:8080/source"
+url="http://localhost:8080/source"
+ignore_dirs="-i d:*_build -i d:*_sdk5g -i d:build -i d:sdk5g -i d:uplane"
+ignore_files="-i *.so -i *.a -i *.o -i *.zip -i *.tar -i *.gz -i *.bz2 -i *.pyc -i *.exe -i core.*"
+is_first_time=1
 
 function seconds_to_time()
 {
@@ -23,23 +30,39 @@ function log()
     echo "$cur_date $1" >> $log_file
 }
 
+function index_single_project()
+{
+    log "start to run opengrok-indexer for project - $1"
+    start_seconds=$(date +%s)
+    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -R $opengrok_dir/etc/configuration.xml -U $url $1
+    end_seconds=$(date +%s)
+    seconds=$((end_seconds - start_seconds))
+    gap=`seconds_to_time $seconds`
+    log "opengrok-indexer take $seconds seconds ( $gap )"
+}
+
+function restart_tomcat()
+{
+    log "shutdown tomcat"
+    sudo /usr/local/tomcat/bin/shutdown.sh
+    sleep 3s
+    log "start tomcat"
+    sudo /usr/local/tomcat/bin/startup.sh
+    sleep 3s
+}
+
 while [ 1 ]
 do
     cur_day=`date +%d`
     cur_hour=`date +%H`
     echo "cur_hour = $cur_hour"
-    #if [[ $cur_hour != 18 ]]; then
-    #    log "$cur_hour clock, sleep 1 hour"
-    #    sleep 1h
-    #    continue
-    #fi
     is_exist=`ps aux | grep opengrok-indexer | grep -v grep`
     if [[ -n "$is_exist" ]]; then
         log "opengrok-indexer is running, sleep 1 hour"
         sleep 1h
         continue
     fi
-    log "18 clock, is time to rebase and index projects in opengrok"
+    log "time to rebase and index projects in opengrok"
 
     cd $project_dir
     dirs=`dir $project_dir`
@@ -51,8 +74,25 @@ do
             pwd
             git pull --rebase
             cd -
+
+            if [[ -d $historycache_dir && $is_first_time == 0 ]]; then
+                index_single_project $d
+                if [[ "$d" == "gnb_21B" || "$d" == "gnb_master" || "$d" == "gnb_21A" ]]; then
+                    restart_tomcat
+                fi
+            fi
         fi
     done
+
+    if [[ -d $historycache_dir && $is_first_time == 0 ]]; then
+        if [[ -d $project_dir/dev ]]; then
+            index_single_project dev
+            restart_tomcat
+        fi
+        log "finished to index every project separately"
+        continue
+    fi
+    let is_first_time=0
 
     if [[ ! -d $opengrok_dir/etc ]]; then
         log "etc/ is not exist, create and copy logging.properties from doc/ to etc/"
@@ -71,19 +111,17 @@ do
     mkdir -p $opengrok_dir/logs
     mkdir -p $opengrok_dir/data
 
-    log "start to run opengrok-indexer"
+    log "start to run opengrok-indexer for all projects"
     start_seconds=$(date +%s)
 
-    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -s $opengrok_dir/src/ -d $opengrok_dir/data/ -H -P -S -G -W $opengrok_dir/etc/configuration.xml -i 'd:*_build' -i 'd:*_sdk5g' -i 'd:build' -i 'd:sdk5g' -i '*.so' -i '*.a' -i '*.o' -i '*.zip' -i '*.tar' -i '*.gz' -i '*.bz2' -i '*.pyc' -i '*.exe'
+    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -s $opengrok_dir/src/ -d $opengrok_dir/data/ -H -P -S -G -W $opengrok_dir/etc/configuration.xml $ignore_dirs $ignore_files
 
     end_seconds=$(date +%s)
     seconds=$((end_seconds - start_seconds))
     gap=`seconds_to_time $seconds`
     log "opengrok-indexer take $seconds seconds ( $gap )"
 
-    sudo /usr/local/tomcat/bin/shutdown.sh
-    sleep 1s
-    sudo /usr/local/tomcat/bin/startup.sh
+    restart_tomcat
 
     now_day=`date +%d`
     if [[ $cur_day == $now_day ]]; then

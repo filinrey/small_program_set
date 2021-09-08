@@ -9,7 +9,8 @@ historycache_dir="$data_dir/historycache"
 url="http://localhost:8080/source"
 ignore_dirs="-i d:*_build -i d:*_sdk5g -i d:build -i d:sdk5g -i d:uplane"
 ignore_files="-i *.so -i *.a -i *.o -i *.zip -i *.tar -i *.gz -i *.bz2 -i *.pyc -i *.exe -i core.*"
-is_first_time=1
+is_first_time=0
+is_skip_master=0
 
 function seconds_to_time()
 {
@@ -34,7 +35,17 @@ function index_single_project()
 {
     log "start to run opengrok-indexer for project - $1"
     start_seconds=$(date +%s)
-    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -R $opengrok_dir/etc/configuration.xml -U $url $1
+    if [[ ! -d $data_dir/xref/$1 ]]; then
+        log "$1 is new project, use opengrok-projadm to add it"
+        opengrok-projadm -b $opengrok_dir -a $1
+        curl -s -X GET http://localhost:8080/source/api/v1/configuration -o $1_fresh_config.xml
+        opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -R $1_fresh_config.xml -U $url -H $1 $1
+        opengrok-projadm -b $opengrok_dir -r
+        rm -f $1_fresh_config.xml
+    else
+        log "$1 is existing, update index"
+        opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -R $opengrok_dir/etc/configuration.xml -U $url $1
+    fi
     end_seconds=$(date +%s)
     seconds=$((end_seconds - start_seconds))
     gap=`seconds_to_time $seconds`
@@ -76,7 +87,12 @@ do
             cd -
 
             if [[ -d $historycache_dir && $is_first_time == 0 ]]; then
-                index_single_project $d
+                if [[ "$d" == "gnb_master" && $is_skip_master == 1 ]]; then
+                    log "first time to skip master"
+                    let is_skip_master=0
+                else
+                    index_single_project $d
+                fi
                 if [[ "$d" == "gnb_21B" || "$d" == "gnb_master" || "$d" == "gnb_21A" ]]; then
                     restart_tomcat
                 fi

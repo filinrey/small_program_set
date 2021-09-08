@@ -33,6 +33,7 @@ def action_gnb_cprt_sdk(cmds, key):
         system_cmd = 'export SDK5G_DIR=' + sdk5g_dir + ' && '
         system_cmd += repo_dir + '/' + XConst.CPRT_SDK_SHELL
         xprint_new_line('')
+        xprint_head(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}

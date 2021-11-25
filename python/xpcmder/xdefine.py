@@ -141,6 +141,27 @@ class XConst(object):
     GREP_WARN_FILE = ANALYZED_DIR + '/warn_logs.tmp'
     GREP_ERROR_FILE = ANALYZED_DIR + '/error_logs.tmp'
 
+    TEAMS = {
+        'zhangxi_team' : [
+            'fenghuai.xu@nokia-sbell.com',
+            'yifan.kong@nokia-sbell.com',
+            'hong.3.zhang@nokia-sbell.com',
+            'danbin.xu@nokia-sbell.com',
+            'dongdong.liu@nokia-sbell.com',
+            'jingwei.liu@nokia-sbell.com',
+            'dongliang.xu@nokia-sbell.com',
+            'jiafeng.1.fu@nokia-sbell.com',
+            'xiangyun.pei@nokia-sbell.com',
+            'wei-wayne.wang@nokia-sbell.com',
+            'chen.4.zhang@nokia-sbell.com',
+            'jingyan.chen@nokia-sbell.com',
+            'echo.he@nokia-sbell.com',
+            'aaron.2.li@nokia-sbell.com',
+            'toby.shi@nokia-sbell.com',
+            'meng.zhang@nokia-sbell.com',
+            ],
+    }
+
 
 class XPrintStyle(object):
     # color print style: \033[mode;foreground;backgroundm + output + \033[0m
@@ -169,7 +190,7 @@ class XPrintStyle(object):
         },
         'mode': {
             'default':   0,
-            'bold': 1,
+            'bold':      1,
             'underline': 4,
             'blink':     5,
             'invert':    7,

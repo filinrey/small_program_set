@@ -21,6 +21,7 @@ from xlines import xlines_action
 from xgnb import xgnb_action
 from xreplace import xreplace_action
 from xlog import xlog_action
+from xgit import xgit_action
 
 PREFIX_SHOW = XConst.PREFIX_NAME
 INPUT_CMD = ''
@@ -43,6 +44,7 @@ ACTION_LIST = {
         xgnb_action,
         xreplace_action,
         xlog_action,
+        xgit_action,
     ]
 }
 

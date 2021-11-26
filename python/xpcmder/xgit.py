@@ -90,20 +90,23 @@ def format_start_end(start, end):
 
 
 def parse_commits_output(output):
-    index = 0
     commits_num = len(output)
     xprint_head('\nthere are totally ' + str(commits_num) + ' commits\n')
+    df = pandas.DataFrame()
     for line in output:
         #xprint_head(line);
         parts = line.split(',', 3)
-        commit_id = re.sub('\* ', '', parts[0])
-        if index % 3 == 0:
-            xprint_head(str(index + 1) + '.\t' + commit_id + '\t' + parts[1] + '\t' + parts[2] + '\t' + parts[3], XPrintStyle.YELLOW)
-        elif index % 3 == 1:
-            xprint_head(str(index + 1) + '.\t' + commit_id + '\t' + parts[1] + '\t' + parts[2] + '\t' + parts[3], XPrintStyle.BLUE)
-        else:
-            xprint_head(str(index + 1) + '.\t' + commit_id + '\t' + parts[1] + '\t' + parts[2] + '\t' + parts[3], XPrintStyle.GREEN)
-        index = index + 1
+        if len(parts) >= 4:
+            result = {'date':'-', 'author':'-', 'message':'-'}
+            commit_id = re.sub('\* ', '', parts[0])
+            result['date'] = parts[1]
+            result['author'] = parts[2]
+            result['message'] = parts[3]
+            new_df = pandas.DataFrame(result, index=[commit_id])
+            df = df.append(new_df)
+
+    xprint_head(df)
+    df.to_csv('git_commits_final_result.csv')
 
 
 def action_git_commits(cmds, key):
@@ -117,7 +120,7 @@ def action_git_commits(cmds, key):
         if not repo_dir:
             xprint_new_line('\tNot a git repository')
             return {'flag': True, 'new_input_cmd': ''}
-        common_part = '--graph --pretty=format:\'%Cred%h%Creset,%C(yellow)%cd%Creset,%Cgreen%aN%Creset,%s\' --abbrev-commit --date=short'
+        common_part = '--graph --pretty=format:\'%Cred%h%Creset,%C(yellow)%cd%Creset,%Cgreen%ae%Creset,%s\' --abbrev-commit --date=short'
         message, author, start, end, before, after, self_dir = parse_commits_cmds(cmds)
         start_end = format_start_end(start, end)
         xprint_new_line('')
@@ -153,10 +156,14 @@ def show_final_lines_result(start_date, end_date, df, mails_num):
     #xprint_head('commits are number of merged tickets, others are number of lines', XPrintStyle.BLUE)
     xprint_head('Sort by lines_code_add', XPrintStyle.GREEN)
     new_df = df[['lines_code_add', 'lines_code_remove', 'lines_ut_add', 'lines_ut_remove', 'lines_add_ut_per_code', 'num_ticket_merge']]
+    new_df.index = new_df.index.str.replace('@nokia-sbell.com', '')
+    new_df.index = new_df.index.str.replace('@nokia.com', '')
     xprint_head(new_df)
     xprint_head('\nSort by lines_sct_add', XPrintStyle.GREEN)
     new_df = df.sort_values(by=['lines_sct_add'], ascending=False)
     new_df = new_df[['lines_sct_add', 'lines_sct_remove', 'num_ticket_merge']]
+    new_df.index = new_df.index.str.replace('@nokia-sbell.com', '')
+    new_df.index = new_df.index.str.replace('@nokia.com', '')
     xprint_head(new_df)
     xprint_head('')
 
@@ -172,6 +179,9 @@ def parse_lines_mails_output(mails_result, start_end, message, before, after, se
     df = pandas.DataFrame()
     percent_per_person = 100.0 / mails_num
     current_percent = 0.0
+    total_result = {'lines_code_add':[0], 'lines_code_remove':[0], 'lines_ut_add':[0], 'lines_ut_remove':[0],
+                    'lines_sct_add':[0], 'lines_sct_remove':[0], 'lines_other_add':[0], 'lines_other_remove':[0],
+                    'num_ticket_merge':[0], 'lines_add_ut_per_code':['-']}
     for mail in mails_list:
         result = {'lines_code_add':[0], 'lines_code_remove':[0], 'lines_ut_add':[0], 'lines_ut_remove':[0],
                   'lines_sct_add':[0], 'lines_sct_remove':[0], 'lines_other_add':[0], 'lines_other_remove':[0],
@@ -181,6 +191,9 @@ def parse_lines_mails_output(mails_result, start_end, message, before, after, se
         child = subprocess.Popen(system_cmd, shell=True, stdout=subprocess.PIPE)
         output = child.communicate()[0].split('\n')
         result['num_ticket_merge'][0] = len(output)
+        if output[len(output) - 1] == '' and result['num_ticket_merge'][0] > 0:
+            result['num_ticket_merge'][0] -= 1
+        total_result['num_ticket_merge'][0] += result['num_ticket_merge'][0]
 
         common_part = ' --pretty=tformat: --numstat '
         system_cmd = 'git log ' + start_end + message + ' --author=' + mail + ' ' + before
@@ -189,7 +202,7 @@ def parse_lines_mails_output(mails_result, start_end, message, before, after, se
         output = child.communicate()[0].split('\n')
         current_percent += percent_per_person * 0.5
         #xprint_head('fetching and analyzing data ' + str(current_percent) + '%')
-        print ('\rfetching and analyzing data : ' + '%.2f' % current_percent + '%', end='')
+        print ('\rfetching and analyzing data : ' + '%.2f' % current_percent + '%        ', end='')
         percent_per_item = percent_per_person * 0.5 / len(output)
         for item in output:
             if len(item) == 0:
@@ -202,27 +215,41 @@ def parse_lines_mails_output(mails_result, start_end, message, before, after, se
             if re.search(r'\.ttcn3|\/sct\/|\/SCT\/|\/mct\/', path):
                 result['lines_sct_add'][0] += add
                 result['lines_sct_remove'][0] += remove
+                total_result['lines_sct_add'][0] += add
+                total_result['lines_sct_remove'][0] += remove
             elif re.search(r'\/ut\/|\/UT\/|\/test\/|\/tests\/', path):
                 result['lines_ut_add'][0] += add
                 result['lines_ut_remove'][0] += remove
+                total_result['lines_ut_add'][0] += add
+                total_result['lines_ut_remove'][0] += remove
             elif re.search(r'\.cpp|\.hpp|\.h|\.c', path):
                 result['lines_code_add'][0] += add
                 result['lines_code_remove'][0] += remove
+                total_result['lines_code_add'][0] += add
+                total_result['lines_code_remove'][0] += remove
             else:
                 result['lines_other_add'][0] += add
                 result['lines_other_remove'][0] += remove
+                total_result['lines_other_add'][0] += add
+                total_result['lines_other_remove'][0] += remove
             current_percent += percent_per_item
             #xprint_head('fetching and analyzing data ' + str(current_percent) + '%')
-            print ('\rfetching and analyzing data : ' + '%.2f' % current_percent + '%', end='')
+            print ('\rfetching and analyzing data : ' + '%.2f' % current_percent + '%        ', end='')
         if result['lines_code_add'][0] == 0:
-            result['lines_add_ut_per_code'][0] = 1000000.00
+            if result['lines_ut_add'][0] == 0:
+                result['lines_add_ut_per_code'][0] = 0.00
+            else:
+                result['lines_add_ut_per_code'][0] = round(result['lines_ut_add'][0] * 1.0, 2)
         else:
             result['lines_add_ut_per_code'][0] = round(result['lines_ut_add'][0] * 1.0 / result['lines_code_add'][0], 2)
         new_df = pandas.DataFrame(result, index=[mail])
         #xprint_head(new_df)
         df = df.append(new_df)
-        df = df.sort_values(by=['lines_code_add'], ascending=False)
 
+    new_df = pandas.DataFrame(total_result, index=['total'])
+    df = df.append(new_df)
+    df = df.sort_values(by=['lines_code_add'], ascending=False)
+    df.to_csv('git_lines_final_result.csv')
     end_date = datetime.datetime.now()
     show_final_lines_result(start_date, end_date, df, mails_num)
 
@@ -234,6 +261,8 @@ def action_git_lines(cmds, key):
         num_cmd -= 1
 
     if num_cmd >= 0 and key == XKey.ENTER:
+        xprint_new_line('')
+        print ('\rparsing params and preparing git data...', end='')
         repo_dir, _, _ = get_gnb_dirs('')
         if not repo_dir:
             xprint_new_line('\tNot a git repository')
@@ -241,7 +270,6 @@ def action_git_lines(cmds, key):
         common_part = '--format=\'%ae\''
         message, author, start, end, before, after, self_dir = parse_commits_cmds(cmds)
         start_end = format_start_end(start, end)
-        xprint_new_line('')
         #xprint_head(message + ' ' + author + ' ' + start + ' ' + end + ' ' + before + ' ' + after + ' ' + self_dir)
         system_cmd = 'git log ' + start_end + ' ' + message + ' ' + author + ' ' + before + ' ' + after
         system_cmd = system_cmd + ' ' + common_part + ' ' + self_dir + ' | sort -u'
@@ -250,6 +278,7 @@ def action_git_lines(cmds, key):
         #os.system(system_cmd)
         child = subprocess.Popen(system_cmd, shell=True, stdout=subprocess.PIPE)
         output = child.communicate()[0].split('\n')
+        print ('\rparsing params and preparing git data... Done', end='')
         parse_lines_mails_output(output, start_end, message, before, after, self_dir)
         return {'flag': True, 'new_input_cmd': ''}
 

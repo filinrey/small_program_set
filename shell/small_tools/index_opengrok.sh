@@ -82,8 +82,22 @@ do
         if [[ -d $d && -d $d/gnb/.git ]]; then
             log "enter $d and rebase"
             cd $d/gnb
+            branch_name=`git rev-parse --abbrev-ref HEAD`
+            if [[ "$branch_name" == "master" ]]; then
+                remote_newest_id=`git ls-remote -q origin $branch_name HEAD | head -n 1 | awk '{print $1}'`
+            else
+                remote_newest_id=`git ls-remote -q origin $branch_name | head -n 1 | awk '{print $1}'`
+            fi
+            local_newest_id=`git rev-parse HEAD`
+            if [[ "$remote_newest_id" == "$local_newest_id" ]]; then
+                log "no update, newest commit : $remote_newest_id"
+                cd -
+                continue
+            fi
+            log "newest in remote is $remote_newest_id, in local $local_newest_id"
             pwd
             git pull --rebase
+            sleep 1s
             cd -
 
             if [[ -d $historycache_dir && $is_first_time == 0 ]]; then
@@ -93,7 +107,7 @@ do
                 else
                     index_single_project $d
                 fi
-                if [[ "$d" == "gnb_21B" || "$d" == "gnb_master" || "$d" == "gnb_21A" ]]; then
+                if [[ "$d" == "gnb_21B" || "$d" == "gnb_master" || "$d" == "gnb_22R1" ]]; then
                     restart_tomcat
                 fi
             fi

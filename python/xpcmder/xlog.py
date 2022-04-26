@@ -50,7 +50,7 @@ def get_log_extract_dir(cmds, num_cmd):
 
 def unzip(item, path, file_name, extract_dir):
     unzip_dir = extract_dir + '/' + os.path.dirname(item) + '/' + file_name
-    command = 'mkdir -p ' + unzip_dir + ' && unzip ' + path + ' -d ' + unzip_dir
+    command = 'mkdir -p ' + unzip_dir + ' && unzip -o ' + path + ' -d ' + unzip_dir
     result = subprocess.call(command, shell=True)
     return result
 
@@ -70,7 +70,7 @@ def unxz(path):
 
 def untgz(item, path, file_name, extract_dir):
     untgz_dir = extract_dir + '/' + os.path.dirname(item) + '/' + file_name
-    command = 'mkdir -p ' + untgz_dir + ' && tar zxvf ' + path + ' -C ' + untgz_dir
+    command = 'mkdir -p ' + untgz_dir + ' && tar --overwrite zxvf ' + path + ' -C ' + untgz_dir
     result = subprocess.call(command, shell=True)
     #xprint_head('untgz result is ' + str(result))
     return result

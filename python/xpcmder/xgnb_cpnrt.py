@@ -76,6 +76,7 @@ def action_gnb_cpnrt_build(cmds, key):
         system_cmd += ' ' + repo_dir + '/cplane/CP-NRT/ && '
         system_cmd += 'make -j$(nproc) cp-nrt'
         xprint_new_line('')
+        xprint_head(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}

@@ -33,6 +33,7 @@ def action_gnb_cprt_sdk(cmds, key):
         system_cmd = 'export SDK5G_DIR=' + sdk5g_dir + ' && '
         system_cmd += repo_dir + '/' + XConst.CPRT_SDK_SHELL
         xprint_new_line('')
+        xprint_head(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -70,7 +71,7 @@ def action_gnb_cprt_build(cmds, key):
         system_cmd += 'cd ' + build_dir + ' && '
         system_cmd += 'cmake -GNinja -DBUILD_TESTS=ON ' + repo_dir + '/cplane/CP-RT/CP-RT/ && '
         system_cmd += 'ninja'
-        xprint_new_line('')
+        xprint_new_line(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -108,11 +109,13 @@ def action_gnb_cprt_ut(cmds, key):
         if not re.search('sdk5g.+prefix_root_' + env_prefix_type, env_path):
             system_cmd += 'source ' + sdk5g_dir + '/prefix_root_' + env_prefix_type + '/environment-setup.sh && '
         system_cmd += 'export BUILD_DIR=' + build_dir + ' && '
+        system_cmd += 'export DEBUG_LOG=1 && '
         system_cmd += 'cd ' + build_dir + ' && '
         if num_cmd == 1:
             system_cmd += 'GTEST_FILTER=*' + cmds[0] + '* '
         system_cmd += 'ninja ut'
         xprint_new_line('')
+        xprint_head(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}
@@ -185,7 +188,7 @@ def action_gnb_cprt_ttcn(cmds, key):
         if not repo_dir:
             xprint_new_line('\tNot a git repository')
             return {'flag': True, 'new_input_cmd': ''}
-        if (num_cmd == 2 and cmds[1] == '-' or num_cmd == 1 and cmds[0] == '-') and os.path.exists(build_dir):
+        if ((num_cmd == 2 and cmds[1] == '-') or (num_cmd == 1 and cmds[0] == '-')) and os.path.exists(build_dir):
             shutil.rmtree(build_dir)
         else:
             build_dir = os.path.dirname(build_dir) + '/cprt_ttcn_build'
@@ -203,7 +206,9 @@ def action_gnb_cprt_ttcn(cmds, key):
         system_cmd += 'make -j$(nproc) -l$(nproc) sct_run_cp_rt '
         if num_cmd >= 1 and (not cmds[0] == '-'):
             system_cmd += 'SCT_TEST_PATTERNS=' + cmds[0]
-        xprint_new_line('')
+        if num_cmd == 2 and (not cmds[1] == '-'):
+            system_cmd += ' SCT_TTCN3_REPEAT_COUNT=' + cmds[1]
+        xprint_new_line(system_cmd)
         os.system(system_cmd)
         xprint_head('')
         return {'flag': True, 'new_input_cmd': ''}

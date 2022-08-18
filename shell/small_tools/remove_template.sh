@@ -12,10 +12,10 @@ echo "totally find ${#file_list[*]} files"
 for file in ${file_list[@]}
 do
     echo "$file"
-    sed -ri 's/_ptr<CELL>/_ptr<cell_config::ICellForUeThread>/g' $file
-    sed -ri 's/_ptr<CELLCONFIG>/_ptr<cell_config::ICellConfigForUeThread>/g' $file
-    sed -ri 's/_ptr<NRCELLGROUP>/_ptr<cell_config::INrCellGroupForUeThread>/g' $file
-    sed -ri 's/_ptr<CELLGROUP>/_ptr<cell_config::INrCellGroupForUeThread>/g' $file
+    sed -ri 's/_ptr<CELL>/_ptr<cprt::cell_config::ICellForUeThread>/g' $file
+    sed -ri 's/_ptr<CELLCONFIG>/_ptr<cprt::cell_config::ICellConfigForUeThread>/g' $file
+    sed -ri 's/_ptr<NRCELLGROUP>/_ptr<cprt::cell_config::INrCellGroupForUeThread>/g' $file
+    sed -ri 's/_ptr<CELLGROUP>/_ptr<cprt::cell_config::INrCellGroupForUeThread>/g' $file
     sed -ri '/^\s*template\ <.*[typenameCELLCONFIGNRGROUP\ ]{13,}.*>$/{:label; s/(<)typename\ [CELLCONFIGNRGROUP]{4,11}[,]{0,1}[\ ]{0,1}/\1/g; s/,[\ ]{0,1}typename\ [CELLCONFIGNRGROUP]{4,11}//g; s/^\s*template\ <>//g; t label;}' $file
     sed -ri '/^\s*template\ <.*[classCELLCONFIGNRGROUP\ ]{13,}.*>$/{:label; s/(<)class\ [CELLCONFIGNRGROUP]{4,11}[,]{0,1}[\ ]{0,1}/\1/g; s/,[\ ]{0,1}class\ [CELLCONFIGNRGROUP]{4,11}//g; s/^\s*template\ <>//g; t label;}' $file
     sed -ri '/<$/{:a;N;s/<\n[CELLCONFIGNRGROUP\ \n,]{4,}>::/::/g;/>::/!ba}' $file
@@ -42,10 +42,10 @@ do
     sed -ri '/^\s*template\ [a-zA-Z]/{:a;N;s/^\s*template\ [a-zA-Z].+ICellConfigForUeThread.+[\)>][const\ ]{0,6}\;$//g;/[\)>][const\ ]{0,6}\;$/!ba}' $file
 
     sed -ri 's/<[CELLCONFIGNRGROUP,\ ]{4,30}>//g' $file
-    sed -ri 's/CELLCONFIG/cell_config::ICellConfigForUeThread/g' $file
-    sed -ri 's/NRCELLGROUP/cell_config::INrCellGroupForUeThread/g' $file
-    sed -ri 's/\bCELLGROUP\b/cell_config::INrCellGroupForUeThread/g' $file
-    sed -ri 's/\bCELL\b/cell_config::ICellForUeThread/g' $file
+    sed -ri 's/CELLCONFIG/cprt::cell_config::ICellConfigForUeThread/g' $file
+    sed -ri 's/NRCELLGROUP/cprt::cell_config::INrCellGroupForUeThread/g' $file
+    sed -ri 's/\bCELLGROUP\b/cprt::cell_config::INrCellGroupForUeThread/g' $file
+    sed -ri 's/\bCELL\b/cprt::cell_config::ICellForUeThread/g' $file
     sed -ri '/^\s*$/{N;/^\s*$/D;}' $file
 done
 sed -ri 's/class ICell;/class ICellForUeThread;/g' `grep -rlw "class ICell;" $cur_dir`

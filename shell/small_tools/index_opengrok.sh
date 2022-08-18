@@ -79,6 +79,9 @@ do
     dirs=`dir $project_dir`
     for d in $dirs
     do
+        if [[ "$EXIT_OPENGROK" == "1" ]]; then
+            exit
+        fi
         if [[ -d $d && -d $d/gnb/.git ]]; then
             log "enter $d and rebase"
             cd $d/gnb

@@ -3,7 +3,7 @@
 from __future__ import print_function
 import os
 import re
-import pandas
+#import pandas
 import shutil
 import subprocess
 import datetime

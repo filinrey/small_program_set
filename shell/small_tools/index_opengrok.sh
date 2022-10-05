@@ -1,16 +1,17 @@
 #!/bin/bash
 
 log_file="/home/fenghxu/small_program_set/shell/small_tools/index_opengrok.sh.log"
+params_file="/home/fenghxu/small_program_set/shell/small_tools/index_opengrok_params.xml"
 opengrok_dir="/var/fpwork/fenghxu/opengrok"
 project_dir="$opengrok_dir/src"
 data_dir="$opengrok_dir/data"
 historycache_dir="$data_dir/historycache"
 #url="http://10.183.67.177:8080/source"
 url="http://localhost:8080/source"
-ignore_dirs="-i d:*_build -i d:*_sdk5g -i d:build -i d:sdk5g -i d:uplane"
+ignore_dirs="-i d:*_build -i d:*_sdk5g -i d:build -i d:sdk5g"
 ignore_files="-i *.so -i *.a -i *.o -i *.zip -i *.tar -i *.gz -i *.bz2 -i *.pyc -i *.exe -i core.*"
-is_first_time=0
 is_skip_master=0
+num_of_pickout_files=0
 
 function seconds_to_time()
 {
@@ -31,6 +32,30 @@ function log()
     echo "$cur_date $1" >> $log_file
 }
 
+function pickout_and_remove_root_files()
+{
+    for item in `ls $1`
+    do
+        owner=`stat --format=%U $1"/"$item`
+        #echo "$1/$item -> $owner"
+        if [[ -d $1"/"$item ]]; then
+            if [[ "$owner" == "root" ]]; then
+                echo "$1/$item -> $owner"
+                `sudo rm -rf "$1/$item"`
+                let num_of_pickout_files=num_of_pickout_files+1
+            else
+                pickout_and_remove_root_files "$1/$item"
+            fi
+        else
+            if [[ "$owner" == "root" ]]; then
+                echo "$1/$item -> $owner"
+                `sudo rm -rf "$1/$item"`
+                let num_of_pickout_files=num_of_pickout_files+1
+            fi
+        fi
+    done
+}
+
 function index_single_project()
 {
     log "start to run opengrok-indexer for project - $1"
@@ -39,12 +64,15 @@ function index_single_project()
         log "$1 is new project, use opengrok-projadm to add it"
         opengrok-projadm -b $opengrok_dir -a $1
         curl -s -X GET http://localhost:8080/source/api/v1/configuration -o $1_fresh_config.xml
-        opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -R $1_fresh_config.xml -U $url -H $1 $1
+        opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/dist/lib/opengrok.jar -- -R $1_fresh_config.xml -U $url -H $1 $1
         opengrok-projadm -b $opengrok_dir -r
         rm -f $1_fresh_config.xml
     else
-        log "$1 is existing, update index"
-        opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -R $opengrok_dir/etc/configuration.xml -U $url $1
+        log "$1 is existing, pick out and remove root files"
+        let num_of_pickout_files=0
+        #pickout_and_remove_root_files $data_dir/historycache/$1
+        log "pickout $num_of_pickout_files files, start to update index"
+        opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/dist/lib/opengrok.jar -- -R $opengrok_dir/etc/configuration.xml -U $url $1
     fi
     end_seconds=$(date +%s)
     seconds=$((end_seconds - start_seconds))
@@ -75,16 +103,32 @@ do
     fi
     log "time to rebase and index projects in opengrok"
 
+    if [[ ! -f $opengrok_dir/etc/configuration.xml ]]; then
+        log "start to run opengrok-indexer for all projects"
+        start_seconds=$(date +%s)
+
+        opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/dist/lib/opengrok.jar -- -s $opengrok_dir/src/ -d $opengrok_dir/data/ -H -P -S -G -W $opengrok_dir/etc/configuration.xml $ignore_dirs $ignore_files
+
+        end_seconds=$(date +%s)
+        seconds=$((end_seconds - start_seconds))
+        gap=`seconds_to_time $seconds`
+        log "opengrok-indexer take $seconds seconds ( $gap )"
+    fi
+
     cd $project_dir
-    dirs=`dir $project_dir`
-    for d in $dirs
+    output=`xmlstarlet sel -t -v '//project/name/text()' $params_file`
+    for item in $output
     do
-        if [[ "$EXIT_OPENGROK" == "1" ]]; then
+        is_exit_opengrok=`xmlstarlet sel -t -v '//params/exit_opengrok/text()' $params_file`
+        echo "item = $item, is_exit_opengrok = $is_exit_opengrok"
+        if [[ "$EXIT_OPENGROK" == "1" || "$is_exit_opengrok" == "1" ]]; then
+            log "EXIT_OPENGROK = $EXIT_OPENGROK, or is_exit_opengrok = $is_exit_opengrok, exit opengrok"
             exit
         fi
-        if [[ -d $d && -d $d/gnb/.git ]]; then
-            log "enter $d and rebase"
-            cd $d/gnb
+
+        if [[ -d $item && -d $item/.git ]]; then
+            log "enter $item and rebase"
+            cd $item
             branch_name=`git rev-parse --abbrev-ref HEAD`
             if [[ "$branch_name" == "master" ]]; then
                 remote_newest_id=`git ls-remote -q origin $branch_name HEAD | head -n 1 | awk '{print $1}'`
@@ -103,29 +147,27 @@ do
             sleep 1s
             cd -
 
-            if [[ -d $historycache_dir && $is_first_time == 0 ]]; then
-                if [[ "$d" == "gnb_master" && $is_skip_master == 1 ]]; then
-                    log "first time to skip master"
-                    let is_skip_master=0
-                else
-                    index_single_project $d
-                fi
-                if [[ "$d" == "gnb_21B" || "$d" == "gnb_master" || "$d" == "gnb_22R1" ]]; then
-                    restart_tomcat
-                fi
+            project_name=`dirname $item`
+            if [[ "$project_name" == "." ]]; then
+                project_name=$item
+            fi
+            if [[ ${project_name} == gnb_22R? ]]; then
+                project_name=$item
+            fi
+            index_single_project ${project_name}
+            is_restart_tomcat=`xmlstarlet sel -t -v '//params/restart_tomcat/text()' $params_file`
+            if [[ "$is_restart_tomcat" == "1" ]]; then
+                restart_tomcat
             fi
         fi
     done
 
-    if [[ -d $historycache_dir && $is_first_time == 0 ]]; then
-        if [[ -d $project_dir/dev ]]; then
-            index_single_project dev
-            restart_tomcat
-        fi
-        log "finished to index every project separately"
-        continue
+    if [[ -d $project_dir/dev ]]; then
+        index_single_project dev
     fi
-    let is_first_time=0
+    log "finished to index every project separately"
+    #continue
+    exit
 
     if [[ ! -d $opengrok_dir/etc ]]; then
         log "etc/ is not exist, create and copy logging.properties from doc/ to etc/"
@@ -147,7 +189,7 @@ do
     log "start to run opengrok-indexer for all projects"
     start_seconds=$(date +%s)
 
-    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/lib/opengrok.jar -- -s $opengrok_dir/src/ -d $opengrok_dir/data/ -H -P -S -G -W $opengrok_dir/etc/configuration.xml $ignore_dirs $ignore_files
+    opengrok-indexer -l debug -J=-Djava.util.logging.config.file=$opengrok_dir/etc/logging.properties -a $opengrok_dir/dist/lib/opengrok.jar -- -s $opengrok_dir/src/ -d $opengrok_dir/data/ -H -P -S -G -W $opengrok_dir/etc/configuration.xml $ignore_dirs $ignore_files
 
     end_seconds=$(date +%s)
     seconds=$((end_seconds - start_seconds))
